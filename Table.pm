@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.08';
+$VERSION = '1.09';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -1198,7 +1198,7 @@ sub setRowHeight {
    # this sub should change the cell height of a row;
    my $i;
    for ($i=1;$i <= $self->{cols};$i++) {
-      $self->setCellWidth($row, $i, $value);
+      $self->setCellHeight($row, $i, $value);
    }
 }
 

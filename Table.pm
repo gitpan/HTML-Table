@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.04a';
+$VERSION = '1.05';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -18,8 +18,8 @@ HTML::Table - produces HTML tables
   use HTML::Table;
 
   $table1 = new HTML::Table($rows, $cols);
-  $table1->setCell($cellrow, $cellcol, "This is Cell 1");
-  $table1->setCellBGColor("blue");
+  $table1->setCell($cellrow, $cellcol, 'This is Cell 1');
+  $table1->setCellBGColor('blue');
   $table1->setCellColSpan(1,1, 2);
   $table1->print;
 
@@ -147,7 +147,7 @@ string, even another table object via the getTable method
 
 =item setCellVAlign(row_num, col_num, [CENTER|TOP|BOTTOM])
 
-=item setCellWidth(row_num, col_num, [pixels])
+=item setCellWidth(row_num, col_num, [pixels|percentoftable])
 
 =item setCellHeight(row_num, col_num, [pixels])
 
@@ -197,9 +197,9 @@ For example...
 	This code snippet:
 
 		$table = new HTML::Table(2, 2);
-		print "<P>Start</P>";
+		print '<P>Start</P>';
 		print $table->getTable;
-		print "<P>End</P>";
+		print '<P>End</P>';
 
 	would produce the same output as:
 
@@ -344,7 +344,14 @@ sub setBGColor {
 #-------------------------------------------------------
 sub setWidth {
    my $self = shift;
-   $self->{width} = shift || undef;
+   my $value = shift;
+   
+   if ( $value !~ /^\s*\d+%?/ ) {
+      print STDERR "$0:setWidth:Invalid value $value";
+      return 0;
+   } else {
+      $self->{width} = $value;
+   }    
 }
 #-------------------------------------------------------
 # Subroutine:  	setCellSpacing([pixels]) 
@@ -553,7 +560,7 @@ sub getTable {
           }
           
           #Finish up Cell by ending <TD>, putting content and </TD>
-          $html .=">". $self->{table}{"$i:$j"} ."</TD>";
+          $html .=">". ($self->{table}{"$i:$j"} || '') ."</TD>";
 
       }
       $html .="</TR>\n";
@@ -759,7 +766,7 @@ sub setColNoWrap {
 }
 
 #-------------------------------------------------------
-# Subroutine:  	setCellWidth(row_num, col_num, [pixels]) 
+# Subroutine:  	setCellWidth(row_num, col_num, [pixels|percentoftable]) 
 # Author:         Stacy Lacy	
 # Date:		      07/30/1997
 #-------------------------------------------------------
@@ -784,7 +791,7 @@ sub setCellWidth {
       return ($row, $col);
    }
 
-   if (! ($value > 0)) {
+   if ( $value !~ /^\s*\d+%?/ ) {
       print STDERR "$0:setCellWidth:Invalid value $value";
       return 0;
    } else {

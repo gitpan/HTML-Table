@@ -1,5 +1,11 @@
 Revision history for Perl extension HTML::Table.
 
+1.05  6 February 2001
+	- Fix to prevent warnings if cell content is undefined.  
+	  Thanks to Boris Zentner <boris@m2b.de> for this suggestion.
+	- Fix to allow cell widths to be defined using percentage values.
+	  Thanks to Boris Zentner <boris@m2b.de> for this suggestion.
+	  
 1.04a 4 December 2000
     - Changed documentation, added reference to Japanese translation.
 

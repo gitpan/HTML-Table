@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '1.20';
+$VERSION = '2.00-beta';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -509,38 +509,6 @@ perl(1), CGI(3)
 
 =cut
 
-#  Internal Methods-------------------------------------------
-#  _updateSpanGrid(row_num, col_num)
-#  _getTableHashValues(tablehashname)
-#  _is_validnum(stringvalue)
-#
-# Documentation:
-# Valid Netscape Navigator BGColors as of 07/30/1997
-#
-# 
-# aliceblue antiquewhite aqua aquamarine azure azure [#F0FFFF] beige bisque 
-# black blanchedalmond blue blueviolet brown burlywood cadetblue chartreuse 
-# chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan 
-# darkgoldenrod darkgray darkgreen darkkhaki darkmagenta darkolivegreen 
-# darkorange darkorchid darkred darksalmon darkseagreen darkslateblue 
-# darkslategray darkturquoise darkviolet deeppink deepskyblue dimgray 
-# dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite 
-# gold goldenrod gray green greenyellow honeydew hotpink indianred indigo 
-# ivory khaki lavender lavenderblush lawngreen lemonchiffon lightblue 
-# lightcoral lightcyan lightgoldenrodyellow lightgreen lightgrey lightpink 
-# lightsalmon lightseagreen lightskyblue lightslategray lightsteelblue 
-# lightyellow lime limegreen linen magenta maroon mediumaquamarine 
-# mediumblue mediumorchid mediumpurple mediumseagreen mediumslateblue 
-# mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream 
-# mistyrose moccasin navajowhite navy oldlace olive olivedrab orange 
-# orangered orchid palegoldenrod palegreen paleturquoise palevioletred 
-# papayawhip peachpuff peru pink plum powderblue purple red rosybrown 
-# royalblue saddlebrown salmon sandybrown seagreen seashell sienna silver 
-# skyblue slateblue slategray snow springgreen steelblue tan teal thistle 
-# tomato turquoise violet wheat white whitesmoke yellow yellowgreen 
-#-------------------------------------------------------
-
-
 #-------------------------------------------------------
 # Subroutine:  	new([num_rows, num_cols])
 #            or new([-rows=>num_rows,
@@ -555,39 +523,15 @@ perl(1), CGI(3)
 # Modified:     30 Mar 1998 - Jay Flaherty
 # Modified:     13 Feb 2001 - Anthony Peacock
 # Modified:     30 Aug 2002 - Tommi Maekitalo
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub new {
 
 # Creates new table instance
 my $type = shift;
 my $class = ref($type) || $type;
-my $self ={};
+my $self = {};
 bless( $self, $class); 
-
-# let's initialize our empty table
-$self->{table} = {};
-
-# Cell alignment is tracked in two mirror tables
-$self->{"table:align"} = {};
-$self->{"table:valign"} = {};
-
-# Cell wrapping template
-$self->{"table:nowrap"} = {};
-
-# Cell width and height masks
-$self->{"table:cellwidth"} = {};
-$self->{"table:cellheight"} = {};
-
-# Cell BG colors   
-$self->{"table:cellbgcolor"} = {};
-
-# Cell Row and Column Spanning masks
-$self->{"table:cellrowspan"} = {};
-$self->{"table:cellcolspan"} = {};
-$self->{"table:cellspan"} = {};
-
-# Cell Row header mask
-$self->{"table:cellhead"} = {};
 
 # If paramter list is a hash (of the form -param=>value, ...)
 if (defined $_[0] && $_[0] =~ /^-/) {
@@ -602,7 +546,7 @@ if (defined $_[0] && $_[0] =~ /^-/) {
     $self->{width} = $flags{-width} || undef;
     $self->{cellspacing} = defined $flags{-spacing} && _is_validnum($flags{-spacing}) ? $flags{-spacing} : undef;
     $self->{cellpadding} = defined $flags{-padding} && _is_validnum($flags{-padding}) ? $flags{-padding} : undef;
-    $self->{cols} = $flags{-cols} || 0;
+    $self->{last_col} = $flags{-cols} || 0;
 
     if ($flags{-head})
     {
@@ -618,18 +562,18 @@ if (defined $_[0] && $_[0] =~ /^-/) {
       }
     }
 
-	if ($self->{rows}) {
-		$self->{rows} = $flags{-rows} if (defined $flags{-rows} && $self->{rows} < $flags{-rows});
+	if ($self->{last_row}) {
+		$self->{last_row} = $flags{-rows} if (defined $flags{-rows} && $self->{last_row} < $flags{-rows});
 	} else {
-	    $self->{rows} = $flags{-rows} || 0;
+	    $self->{last_row} = $flags{-rows} || 0;
 	}
 
 }
 elsif (ref $_[0])
 {
     # Array-reference [ ['row0col0', 'row0col1'], ['row1col0', 'row1col1'] ]
-    $self->{rows} = 0;
-    $self->{cols} = 0;
+    $self->{last_row} = 0;
+    $self->{last_col} = 0;
     foreach (@{$_[0]})
     {
       $self->addRow(@$_);
@@ -638,8 +582,8 @@ elsif (ref $_[0])
 }
 else # user supplied row and col (or default to 0,0)
 {
-    $self->{rows} = shift || 0;
-    $self->{cols} = shift || 0;
+    $self->{last_row} = shift || 0;
+    $self->{last_col} = shift || 0;
 }
 
 # Table Auto-Grow mode (default on)
@@ -657,13 +601,14 @@ return $self;
 # Modified:		23 Oct 2001 - Terence Brown
 # Modified:		05 Jan 2002 - Arno Teunisse
 # Modified:		10 Jan 2002 - Anthony Peacock
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub getTable {
    my $self = shift;
    my $html="";
 
    # this sub returns HTML version of the table object
-   if ((! $self->{rows}) || (! $self->{cols})) {
+   if ((! $self->{last_row}) || (! $self->{last_col})) {
       return ;  # no rows or no cols
    }
 
@@ -688,84 +633,85 @@ sub getTable {
    }
 
    my ($i, $j);
-	for ($i=1;$i <= ($self->{rows});$i++){
+	for ($i=1;$i <= ($self->{last_row});$i++){
     	# Print each row of the table   
 		$html .="<tr" ;		
 
 		# Set the row attributes (if any)
-		$html .= ' bgcolor="' . $self->{'table:RowBGColor'}{$i} . '"' if defined $self->{'table:RowBGColor'}{$i};
-		$html .= ' align="' . $self->{'table:RowAlign'}{$i} . '"'  if defined $self->{'table:RowAlign'}{$i};		
-		$html .= ' valign="' . $self->{'table:RowVAlign'}{$i} . '"'  if defined $self->{'table:RowVAlign'}{$i} ;		
-		$html .= ' style="' . $self->{'table:RowStyle'}{$i} . '"'  if defined $self->{'table:RowStyle'}{$i} ;
-		$html .= ' class="' . $self->{'table:RowClass'}{$i} . '"'  if defined $self->{'table:RowClass'}{$i} ;
-		$html .= ' nowrap="' . $self->{'table:RowNoWrap'}{$i} . '"'  if defined $self->{'table:RowNoWrap'}{$i} ;
-		$html .= " $self->{'table:RowAttr'}{$i}" if defined $self->{'table:RowAttr'}{$i} ;
+		$html .= ' bgcolor="' . $self->{rows}[$i]->{bgcolor} . '"' if defined $self->{rows}[$i]->{bgcolor};
+		$html .= ' align="' . $self->{rows}[$i]->{align} . '"'  if defined $self->{rows}[$i]->{align};	
+		$html .= ' valign="' . $self->{rows}[$i]->{valign} . '"'  if defined $self->{rows}[$i]->{valign} ;
+		$html .= ' style="' . $self->{rows}[$i]->{style} . '"'  if defined $self->{rows}[$i]->{style} ;
+		$html .= ' class="' . $self->{rows}[$i]->{class} . '"'  if defined $self->{rows}[$i]->{class} ;
+		$html .= ' nowrap="' . $self->{rows}[$i]->{nowrap} . '"'  if defined $self->{rows}[$i]->{nowrap} ;
+		$html .= " $self->{rows}[$i]->{attr}" if defined $self->{rows}[$i]->{attr}{$i} ;
 		$html .= ">" ; 	# Closing tr tag
 		
-      for ($j=1; $j <= ($self->{cols}); $j++) {
+      for ($j=1; $j <= ($self->{last_col}); $j++) {
           
-          if (defined $self->{'table:cellspan'}{"$i:$j"} && $self->{"table:cellspan"}{"$i:$j"} eq "SPANNED"){
+          if (defined $self->{rows}[$i]->{cells}[$j]->{colspan} && $self->{rows}[$i]->{cells}[$j]->{colspan} eq "SPANNED"){
              $html.="<!-- spanned cell -->";
              next
           }
           
           # print cell
           # if head flag is set print <th> tag else <td>
-          if (defined $self->{"table:cellhead"}{"$i:$j"}) {
+          if (defined $self->{rows}[$i]->{cells}[$j]->{head}) {
             $html .="<th";
           } else { 
             $html .="<td";
           }
 
           # if alignment options are set, add them in the cell tag
-          $html .=' align="' . $self->{"table:align"}{"$i:$j"} . '"'
-                if defined $self->{"table:align"}{"$i:$j"};
+          $html .=' align="' . $self->{rows}[$i]->{cells}[$j]->{align} . '"'
+                if defined $self->{rows}[$i]->{cells}[$j]->{align};
           
-          $html .=" valign=\"" . $self->{"table:valign"}{"$i:$j"} . "\""
-                if defined $self->{"table:valign"}{"$i:$j"};
+          $html .=" valign=\"" . $self->{rows}[$i]->{cells}[$j]->{valign} . "\""
+                if defined $self->{rows}[$i]->{cells}[$j]->{valign};
           
           # apply custom height and width to the cell tag
-          $html .=" width=\"" . $self->{"table:cellwidth"}{"$i:$j"} . "\""
-                if defined $self->{"table:cellwidth"}{"$i:$j"};
-          $html .=" height=\"" . $self->{"table:cellheight"}{"$i:$j"} . "\""
-                if defined $self->{"table:cellheight"}{"$i:$j"};
+          $html .=" width=\"" . $self->{rows}[$i]->{cells}[$j]->{width} . "\""
+                if defined $self->{rows}[$i]->{cells}[$j]->{width};
+                
+          $html .=" height=\"" . $self->{rows}[$i]->{cells}[$j]->{height} . "\""
+                if defined $self->{rows}[$i]->{cells}[$j]->{height};
                     
           # apply background color if set
-          $html .=" bgcolor=\"" . $self->{"table:cellbgcolor"}{"$i:$j"} . "\""
-                if defined $self->{"table:cellbgcolor"}{"$i:$j"};
+          $html .=" bgcolor=\"" . $self->{rows}[$i]->{cells}[$j]->{bgcolor} . "\""
+                if defined $self->{rows}[$i]->{cells}[$j]->{bgcolor};
 
           # apply style if set
-          $html .=" style=\"" . $self->{"table:cellstyle"}{"$i:$j"} . "\""
-                if defined $self->{"table:cellstyle"}{"$i:$j"};
+          $html .=" style=\"" . $self->{rows}[$i]->{cells}[$j]->{style} . "\""
+                if defined $self->{rows}[$i]->{cells}[$j]->{style};
 
           # apply class if set
-          $html .=" class=\"" . $self->{"table:cellclass"}{"$i:$j"} . "\""
-                if defined $self->{"table:cellclass"}{"$i:$j"};
+          $html .=" class=\"" . $self->{rows}[$i]->{cells}[$j]->{class} . "\""
+                if defined $self->{rows}[$i]->{cells}[$j]->{class};
 
           # User defined attribute
-          $html .=" " . $self->{"table:cellattr"}{"$i:$j"}
-                if defined $self->{"table:cellattr"}{"$i:$j"};
+          $html .=" " . $self->{rows}[$i]->{cells}[$j]->{attr}
+                if defined $self->{rows}[$i]->{cells}[$j]->{attr};
 
           # if nowrap mask is set, put it in the cell tag
-          $html .=" nowrap" if defined $self->{"table:nowrap"}{"$i:$j"};
+          $html .=" nowrap" if defined $self->{rows}[$i]->{cells}[$j]->{nowrap};
           
           # if column/row spanning is set, put it in the cell tag
           # also increment to skip spanned rows/cols.
-          if (defined $self->{"table:cellcolspan"}{"$i:$j"}) {
-            $html .=" colspan=\"" . $self->{"table:cellcolspan"}{"$i:$j"} ."\"";
+          if (defined $self->{rows}[$i]->{cells}[$j]->{colspan}) {
+            $html .=" colspan=\"" . $self->{rows}[$i]->{cells}[$j]->{colspan} ."\"";
           }
-          if (defined $self->{"table:cellrowspan"}{"$i:$j"}){
-            $html .=" rowspan=\"" . $self->{"table:cellrowspan"}{"$i:$j"} ."\"";
+          if (defined $self->{rows}[$i]->{cells}[$j]->{rowspan}){
+            $html .=" rowspan=\"" . $self->{rows}[$i]->{cells}[$j]->{rowspan} ."\"";
           }
           
           # Finish up Cell by ending cell start tag, putting content and cell end tag
           $html .=">";
-          $html .= $self->{'table:cellstartformat'}{"$i:$j"} if defined $self->{'table:cellstartformat'}{"$i:$j"} ;
-          $html .= $self->{table}{"$i:$j"} if defined $self->{table}{"$i:$j"};
-		  $html .= $self->{'table:cellendformat'}{"$i:$j"} if defined $self->{'table:cellendformat'}{"$i:$j"} ;
+          $html .= $self->{rows}[$i]->{cells}[$j]->{startformat} if defined $self->{rows}[$i]->{cells}[$j]->{startformat} ;
+          $html .= $self->{rows}[$i]->{cells}[$j]->{contents} if defined $self->{rows}[$i]->{cells}[$j]->{contents};
+		  $html .= $self->{rows}[$i]->{cells}[$j]->{endformat} if defined $self->{rows}[$i]->{cells}[$j]->{endformat} ;
           
           # if head flag is set print </th> tag else </td>
-          if (defined $self->{"table:cellhead"}{"$i:$j"}) {
+          if (defined $self->{rows}[$i]->{cells}[$j]->{head}) {
             $html .= "</th>";
           } else {
             $html .= "</td>";
@@ -793,6 +739,7 @@ sub print {
 # Author:       John Stumbles
 # Date:		08 Feb 2001
 # Description:  switches on (default) or off auto-grow mode
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub autoGrow {
     my $self = shift;
@@ -815,6 +762,7 @@ sub autoGrow {
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
 # Modified:     12 Jul 2000 - Anthony Peacock (To allow zero values)
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setBorder {
     my $self = shift;
@@ -826,6 +774,7 @@ sub setBorder {
 # Subroutine:  	setBGColor([colorname|colortriplet]) 
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setBGColor {
    my $self = shift;
@@ -836,6 +785,7 @@ sub setBGColor {
 # Subroutine:  	setStyle(css style) 
 # Author:       Anthony Peacock
 # Date:		6 Mar 2002
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setStyle {
    my $self = shift;
@@ -846,6 +796,7 @@ sub setStyle {
 # Subroutine:  	setClass(css class) 
 # Author:       Anthony Peacock
 # Date:			22 July 2002
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setClass {
    my $self = shift;
@@ -856,6 +807,7 @@ sub setClass {
 # Subroutine:  	setWidth([pixels|percentofscreen]) 
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setWidth {
    my $self = shift;
@@ -874,6 +826,7 @@ sub setWidth {
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
 # Modified:     12 Jul 2000 - Anthony Peacock (To allow zero values)
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellSpacing {
     my $self = shift;
@@ -886,6 +839,7 @@ sub setCellSpacing {
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
 # Modified:     12 Jul 2000 - Anthony Peacock (To allow zero values)
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellPadding {
     my $self = shift;
@@ -897,6 +851,7 @@ sub setCellPadding {
 # Subroutine:  	setCaption("CaptionText" [, "TOP|BOTTOM]) 
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCaption {
    my $self = shift;
@@ -913,7 +868,7 @@ sub setCaption {
 # Subroutine:  	setAlign([left|right|center]) 
 # Author:         Arno Teunisse	 ( freely copied from setBGColor
 # Date:		      05 Jan 2002
-# 
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setAlign {
    my $self = shift;
@@ -924,6 +879,7 @@ sub setAlign {
 # Subroutine:  	setRules([left|right|center]) 
 # Author:         Arno Teunisse	 ( freely copied from setBGColor
 # Date:		      05 Jan 2002
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 # parameter  	[ none | groups | rows| cols | all ]
 #-------------------------------------------------------
 sub setRules {
@@ -935,6 +891,7 @@ sub setRules {
 # Subroutine:  	setAttr("attribute string") 
 # Author:         Anthony Peacock
 # Date:		      10 Jan 2002
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setAttr {
    my $self = shift;
@@ -945,20 +902,22 @@ sub setAttr {
 # Subroutine:  	getTableRows 
 # Author:       Joerg Jaspert
 # Date:			4 Aug 2001
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub getTableRows{
     my $self = shift;
-    return $self->{rows};
+    return $self->{last_row};
 }
 
 #-------------------------------------------------------
 # Subroutine:  	getTableCols 
 # Author:       Joerg Jaspert
 # Date:			4 Aug 2001
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub getTableCols{
     my $self = shift;
-    return $self->{cols};
+    return $self->{last_col};
 }
 
 #-------------------------------------------------------
@@ -977,6 +936,7 @@ sub getTableCols{
 # Date:		28 Jun 2002
 # Modified:     09 Apr 2003 -- dl  Added options: -strip_html, 
 #                                  -strip_non_numeric, and -presort_func.
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub sort {
   my $self = shift;
@@ -1004,8 +964,8 @@ sub sort {
   }
   my $cmp_symbol = uc($sort_type) eq "ALPHA" ? "cmp" : "<=>";
   my ($first, $last) = uc($sort_order) eq "ASC"?("\$a", "\$b"):("\$b", "\$a");
-  my $piece1 = qq/\$self->{table}{"$first:$sort_col"}/;
-  my $piece2 = qq/\$self->{table}{"$last:$sort_col"}/;
+  my $piece1 = qq/\$self->{rows}[$first]->{cells}[$sort_col]->{contents}/;
+  my $piece2 = qq/\$self->{rows}[$last]->{cells}[$sort_col]->{contents}/;
   if ($strip_html) {
       $piece1 = qq/&_stripHTML($piece1)/;
       $piece2 = qq/&_stripHTML($piece2)/;
@@ -1020,14 +980,14 @@ sub sort {
   }
   my $sortfunc = qq/sub { $piece1 $cmp_symbol $piece2 }/;
   my $sorter = eval($sortfunc);
-  my @sortkeys = sort $sorter (($skip_rows+1)..$self->{rows});
+  my @sortkeys = sort $sorter (($skip_rows+1)..$self->{last_row});
 
-  my %holdtable = %{$self->{table}};
+  my @holdtable = @$self->{rows};
   my $i = $skip_rows;
   for my $k (@sortkeys) {
       ++$i;
-      for (my $j=1; $j <= $self->{cols}; $j++) {
-	  $self->{table}{"$i:$j"} = $holdtable{"$k:$j"};
+      for (my $j=1; $j <= $self->{last_col}; $j++) {
+	  $self->{rows}[$i]->{cells}[$j]->{contents} = $holdtable[$k]->{cells}[$j]->{contents};
       }
   }
 }
@@ -1069,6 +1029,7 @@ sub _stripNonNumeric {
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
 # Modified:     08 Feb 2001 - John Stumbles to allow auto-growing of table
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCell {
    my $self = shift;
@@ -1076,8 +1037,8 @@ sub setCell {
    (my $col = shift) || return 0;
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
    if ($row < 1) {
       print STDERR "$0:setCell:Invalid table row reference $row:$col\n";
@@ -1087,21 +1048,21 @@ sub setCell {
       print STDERR "$0:setCell:Invalid table column reference $row:$col\n";
       return 0;
    }
-   if ($row > $self->{rows}) {
+   if ($row > $self->{last_row}) {
       if ($self->{autogrow}) {
-        $self->{rows} = $row ;
+        $self->{last_row} = $row ;
       } else {
         print STDERR "$0:setCell:Invalid table row reference $row:$col\n";
       }
    }
-   if ($col > $self->{cols}) {
+   if ($col > $self->{last_col}) {
       if ($self->{autogrow}) {
-        $self->{cols} = $col ;
+        $self->{last_col} = $col ;
       } else {
         print STDERR "$0:setCell:Invalid table column reference $row:$col\n";
       }
    }
-   $self->{table}{"$row:$col"} = shift;
+	$self->{rows}[$row]->{cells}[$col]->{contents} = shift;
    return ($row, $col);
 
 }
@@ -1110,6 +1071,7 @@ sub setCell {
 # Subroutine:  	getCell(row_num, col_num) 
 # Author:       Anthony Peacock	
 # Date:		27 Jul 1998
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub getCell {
    my $self = shift;
@@ -1117,20 +1079,19 @@ sub getCell {
    (my $col = shift) || return 0;
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:getCell:Invalid table reference $row:$col\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:getCell:Invalid table reference $row:$col\n";
       return 0;
    }
 
-   return $self->{table}{"$row:$col"} ;
-
+   return $self->{rows}[$row]->{cells}[$col]->{contents} ;
 }
 
 #-------------------------------------------------------
@@ -1140,6 +1101,7 @@ sub getCell {
 # Modified:     13 Feb 2001 - Anthony Peacock for case insensitive
 #                             alignment parameters
 #                             (suggested by John Stumbles)
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellAlign {
    my $self = shift;
@@ -1148,21 +1110,21 @@ sub setCellAlign {
 	my $align = uc(shift);
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellAlign:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellAlign:Invalid table reference\n";
       return 0;
    }
 
    if (! $align) {
       #return to default alignment if none specified
-      undef $self->{"table:align"}{"$row:$col"};
+      undef $self->{rows}[$row]->{cells}[$col]->{align};
       return ($row, $col);
    }
 
@@ -1173,7 +1135,7 @@ sub setCellAlign {
    }
 
    # We have a valid alignment type so let's set it for the cell
-   $self->{"table:align"}{"$row:$col"} = $align;
+   $self->{rows}[$row]->{cells}[$col]->{align} = $align;
    return ($row, $col);
 }
 
@@ -1185,6 +1147,7 @@ sub setCellAlign {
 #                             alignment parameters
 #                             (suggested by John Stumbles)
 # Modified:		22 Aug 2003 - Alejandro Juarez to add MIDDLE and BASELINE
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellVAlign {
    my $self = shift;
@@ -1193,14 +1156,14 @@ sub setCellVAlign {
    my $valign = uc(shift);
    
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellVAlign:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellVAlign:Invalid table reference\n";
       return 0;
    }
@@ -1219,7 +1182,7 @@ sub setCellVAlign {
    }
 
    # We have a valid valignment type so let's set it for the cell
-   $self->{"table:valign"}{"$row:$col"} = $valign;
+   $self->{rows}[$row]->{cells}[$col]->{valign} = $valign;
    return ($row, $col);
 }
 
@@ -1227,6 +1190,7 @@ sub setCellVAlign {
 # Subroutine:  	setCellHead(row_num, col_num, [0|1]) 
 # Author:       Jay Flaherty
 # Date:		19 Mar 1998
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellHead{
    my $self = shift;
@@ -1235,19 +1199,19 @@ sub setCellHead{
    my $value = shift || 1;
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellHead:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellHead:Invalid table reference\n";
       return 0;
    }
 
-   $self->{"table:cellhead"}{"$row:$col"} = $value;
+   $self->{rows}[$row]->{cells}[$col]->{head} = $value;
    return ($row, $col);
 }
 
@@ -1255,6 +1219,7 @@ sub setCellHead{
 # Subroutine:  	setCellNoWrap(row_num, col_num, [0|1]) 
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellNoWrap {
    my $self = shift;
@@ -1263,20 +1228,19 @@ sub setCellNoWrap {
    (my $value = shift);
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellNoWrap:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellNoWrap:Invalid table reference\n";
       return 0;
    }
 
-
-   $self->{"table:nowrap"}{"$row:$col"} = $value;
+   $self->{rows}[$row]->{cells}[$col]->{nowrap} = $value;
    return ($row, $col);
 }
 
@@ -1284,6 +1248,7 @@ sub setCellNoWrap {
 # Subroutine:  	setCellWidth(row_num, col_num, [pixels|percentoftable]) 
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellWidth {
    my $self = shift;
@@ -1292,14 +1257,14 @@ sub setCellWidth {
    (my $value = shift);
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellWidth:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellWidth:Invalid table reference\n";
       return 0;
    }
@@ -1314,7 +1279,7 @@ sub setCellWidth {
       print STDERR "$0:setCellWidth:Invalid value $value\n";
       return 0;
    } else {
-      $self->{"table:cellwidth"}{"$row:$col"} = $value;
+      $self->{rows}[$row]->{cells}[$col]->{width} = $value;
       return ($row, $col);
    }
 }
@@ -1323,6 +1288,7 @@ sub setCellWidth {
 # Subroutine:  	setCellHeight(row_num, col_num, [pixels]) 
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellHeight {
    my $self = shift;
@@ -1331,14 +1297,14 @@ sub setCellHeight {
    (my $value = shift);
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellHeight:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellHeight:Invalid table reference\n";
       return 0;
    }
@@ -1353,7 +1319,7 @@ sub setCellHeight {
       print STDERR "$0:setCellHeight:Invalid value $value\n";
       return 0;
    } else {
-      $self->{"table:cellheight"}{"$row:$col"} = $value;
+      $self->{rows}[$row]->{cells}[$col]->{height} = $value;
       return ($row, $col);
    }
 }
@@ -1362,6 +1328,7 @@ sub setCellHeight {
 # Subroutine:  	setCellBGColor(row_num, col_num, [colorname|colortrip]) 
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellBGColor {
    my $self = shift;
@@ -1370,14 +1337,14 @@ sub setCellBGColor {
    (my $value = shift);
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellBGColor:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellBGColor:Invalid table reference\n";
       return 0;
    }
@@ -1389,7 +1356,7 @@ sub setCellBGColor {
 
    # BG colors are too hard to verify, let's assume user
    # knows what they are doing
-   $self->{"table:cellbgcolor"}{"$row:$col"} = $value;
+   $self->{rows}[$row]->{cells}[$col]->{bgcolor} = $value;
    return ($row, $col);
 }
 
@@ -1397,6 +1364,7 @@ sub setCellBGColor {
 # Subroutine:  	setCellSpan(row_num, col_num, num_rows, num_cols)
 # Author:       Anthony Peacock
 # Date:			22 July 2002
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellSpan {
    my $self = shift;
@@ -1406,37 +1374,37 @@ sub setCellSpan {
    (my $num_cols = shift);
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellpan:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellSpan:Invalid table reference\n";
       return 0;
    }
 
    if (! $num_cols || ! $num_rows) {
       #return to default if none specified
-      undef $self->{'table:cellcolspan'}{"$row:$col"};
-      undef $self->{'table:cellrowspan'}{"$row:$col"};
+      undef $self->{rows}[$row]->{cells}[$col]->{colspan};
+      undef $self->{rows}[$row]->{cells}[$col]->{rowspan};
    }
 
-   $self->{'table:cellcolspan'}{"$row:$col"} = $num_cols;
-   $self->{'table:cellrowspan'}{"$row:$col"} = $num_rows;
+   $self->{rows}[$row]->{cells}[$col]->{colspan} = $num_cols;
+   $self->{rows}[$row]->{cells}[$col]->{rowspan} = $num_rows;
 
    $self->_updateSpanGrid($row,$col);
    
    return ($row, $col);
-
 }
 
 #-------------------------------------------------------
 # Subroutine:  	setCellRowSpan(row_num, col_num, num_cells)
 # Author:       Stacy Lacy	
 # Date:		31 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellRowSpan {
    my $self = shift;
@@ -1445,24 +1413,24 @@ sub setCellRowSpan {
    (my $value = shift);
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellRowSpan:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellRowSpan:Invalid table reference\n";
       return 0;
    }
 
    if (! $value) {
       #return to default alignment if none specified
-      undef $self->{"table:cellrowspan"}{"$row:$col"};
+      undef $self->{rows}[$row]->{cells}[$col]->{rowspan};
    }
 
-   $self->{"table:cellrowspan"}{"$row:$col"} = $value;
+   $self->{rows}[$row]->{cells}[$col]->{rowspan} = $value;
    
    $self->_updateSpanGrid($row,$col);
    
@@ -1473,6 +1441,7 @@ sub setCellRowSpan {
 # Subroutine:  	setCellColSpan(row_num, col_num, num_cells)
 # Author:       Stacy Lacy	
 # Date:		31 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellColSpan {
    my $self = shift;
@@ -1481,29 +1450,29 @@ sub setCellColSpan {
    (my $value = shift);
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellColSpan:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellColSpan:Invalid table reference\n";
       return 0;
    }
 
    if (! $value) {
       #return to default alignment if none specified
-      undef $self->{"table:cellcolspan"}{"$row:$col"};
+      undef $self->{rows}[$row]->{cells}[$col]->{colspan};
    }
 
-   $self->{"table:cellcolspan"}{"$row:$col"} = $value;
+   $self->{rows}[$row]->{cells}[$col]->{colspan} = $value;
 
    $self->_updateSpanGrid($row,$col);
    
    return ($row, $col);
-
 }
 
 #-------------------------------------------------------
@@ -1512,6 +1481,7 @@ sub setCellColSpan {
 # Date:			21 Feb 2001
 # Description:	Sets start and end HTML formatting strings for
 #               the cell content
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellFormat {
    my $self = shift;
@@ -1521,29 +1491,29 @@ sub setCellFormat {
    (my $end_string = shift);
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellFormat:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellFormat:Invalid table reference\n";
       return 0;
    }
 
    if (! $start_string) {
       #return to default format if none specified
-      undef $self->{"table:cellstartformat"}{"$row:$col"};
-      undef $self->{"table:cellendformat"}{"$row:$col"};
+      undef $self->{rows}[$row]->{cells}[$col]->{startformat};
+      undef $self->{rows}[$row]->{cells}[$col]->{endformat};
    }
 	else
 	{
 		# No checks will be made on the validity of these strings
 		# User must take responsibility for results...
-		$self->{"table:cellstartformat"}{"$row:$col"} = $start_string;
-		$self->{"table:cellendformat"}{"$row:$col"} = $end_string;
+		$self->{rows}[$row]->{cells}[$col]->{startformat} = $start_string;
+		$self->{rows}[$row]->{cells}[$col]->{endformat} = $end_string;
    }
    return ($row, $col);
 }
@@ -1552,6 +1522,7 @@ sub setCellFormat {
 # Subroutine:  	setCellStyle(row_num, col_num, "Style") 
 # Author:       Anthony Peacock	
 # Date:			10 Jan 2002
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellStyle {
    my $self = shift;
@@ -1560,25 +1531,25 @@ sub setCellStyle {
    (my $value = shift);
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellStyle:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellStyle:Invalid table reference\n";
       return 0;
    }
 
    if (! $value) {
       #return to default style if none specified
-      undef $self->{'table:cellstyle'}{"$row:$col"};
+      undef $self->{rows}[$row]->{cells}[$col]->{style};
       return ($row, $col);
    }
 
-   $self->{'table:cellstyle'}{"$row:$col"} = $value;
+   $self->{rows}[$row]->{cells}[$col]->{style} = $value;
    return ($row, $col);
 }
 
@@ -1586,6 +1557,7 @@ sub setCellStyle {
 # Subroutine:  	setCellClass(row_num, col_num, "class") 
 # Author:       Anthony Peacock	
 # Date:			22 July 2002
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellClass {
    my $self = shift;
@@ -1594,25 +1566,25 @@ sub setCellClass {
    (my $value = shift);
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellClass:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellClass:Invalid table reference\n";
       return 0;
    }
 
    if (! $value) {
       #return to default class if none specified
-      undef $self->{'table:cellclass'}{"$row:$col"};
+      undef $self->{rows}[$row]->{cells}[$col]->{class};
       return ($row, $col);
    }
 
-   $self->{'table:cellclass'}{"$row:$col"} = $value;
+   $self->{rows}[$row]->{cells}[$col]->{class} = $value;
    return ($row, $col);
 }
 
@@ -1620,6 +1592,7 @@ sub setCellClass {
 # Subroutine:  	setCellAttr(row_num, col_num, "cell attribute string") 
 # Author:       Anthony Peacock
 # Date:			10 Jan 2002
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setCellAttr {
    my $self = shift;
@@ -1628,23 +1601,23 @@ sub setCellAttr {
    (my $value = shift);
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{rows} if $row == -1;
-	$col = $self->{cols} if $col == -1;
+	$row = $self->{last_row} if $row == -1;
+	$col = $self->{last_col} if $col == -1;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
+   if (($row > $self->{last_row}) || ($row < 1) ) {
       print STDERR "$0:setCellAttr:Invalid table reference\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
+   if (($col > $self->{last_col}) || ($col < 1) ) {
       print STDERR "$0:setCellAttr:Invalid table reference\n";
       return 0;
    }
 
    if (! $value) {
-      undef $self->{"table:cellattr"}{"$row:$col"};
+      undef $self->{rows}[$row]->{cells}[$col]->{attr};
    }
 
-   $self->{"table:cellattr"}{"$row:$col"} = $value;
+   $self->{rows}[$row]->{cells}[$col]->{attr} = $value;
    return ($row, $col);
 }
 
@@ -1658,6 +1631,7 @@ sub setCellAttr {
 # Subroutine:  	addRow("cell 1 content" [, "cell 2 content",  ...]) 
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub addRow {
    my $self = shift;
@@ -1666,14 +1640,14 @@ sub addRow {
    my $count= @_;
    # if number of cells is greater than cols, let's assume
    # we want to add a column.
-   $self->{cols} = $count if ($count >$self->{cols});
-   $self->{rows}++;  # increment number of rows
+   $self->{last_col} = $count if ($count >$self->{last_col});
+   $self->{last_row}++;  # increment number of rows
    my $i;
    for ($i=1;$i <= $count;$i++) {
       # Store each value in cell on row
-      $self->{table}{"$self->{rows}:$i"} = shift;
+         $self->{rows}[$self->{last_row}]->{cells}[$i]->{contents} = shift;
    }
-   return $self->{rows};
+   return $self->{last_row};
    
 }
 
@@ -1683,6 +1657,7 @@ sub addRow {
 # Date:			30 Jul 1997
 # Modified:		05 Jan 2002 - Arno Teunisse
 # Modified:		10 Jan 2002 - Anthony Peacock
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setRowAlign {
 	my $self = shift;
@@ -1690,9 +1665,9 @@ sub setRowAlign {
 	my $align = shift;
 
 	# If -1 is used in the row parameter, use the last row
-	$row = $self->{rows} if $row == -1;
+	$row = $self->{last_row} if $row == -1;
 
-	if ( $row > $self->{rows} || $row < 1 ) {
+	if ( $row > $self->{last_row} || $row < 1 ) {
 		print STDERR "\n$0:setRowAlign: Invalid table reference" ;
 		return 0;
 	} elsif ( $align !~ /left|right|center/i ) {
@@ -1700,7 +1675,7 @@ sub setRowAlign {
 		return 0;
 	}
 	
-	$self->{'table:RowAlign'}{$row} = $align  ;
+   $self->{rows}[$row]->{align} = $align  ;
 }
 
 #-------------------------------------------------------
@@ -1709,6 +1684,7 @@ sub setRowAlign {
 # Author:		Arno Teunisse
 # Date:			05 Jan 2002
 # Modified: 	10 Jan 2002 - Anthony Peacock
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setRowStyle {
 	my $self = shift;
@@ -1716,14 +1692,14 @@ sub setRowStyle {
 	my $html_str = shift;
 
 	# If -1 is used in the row parameter, use the last row
-	$row = $self->{rows} if $row == -1;
+	$row = $self->{last_row} if $row == -1;
 
-	if ( $row > $self->{rows} || $row < 1 ) {
+	if ( $row > $self->{last_row} || $row < 1 ) {
 		print STDERR "\n$0:setRowStyle: Invalid table reference" ;
 		return 0;
 	}
 	
-	$self->{'table:RowStyle'}{"$row"} = "$html_str"  ;
+	$self->{rows}[$row]->{style} = $html_str  ;
 }
 
 #-------------------------------------------------------
@@ -1731,6 +1707,7 @@ sub setRowStyle {
 # Comment:		to insert a css class in the <tr > Tag
 # Author:		Anthony Peacock (based on setRowStyle by Arno Teunisse)
 # Date:			22 July 2002
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setRowClass {
 	my $self = shift;
@@ -1738,14 +1715,14 @@ sub setRowClass {
 	my $html_str = shift;
 
 	# If -1 is used in the row parameter, use the last row
-	$row = $self->{rows} if $row == -1;
+	$row = $self->{last_row} if $row == -1;
 
-	if ( $row > $self->{rows} || $row < 1 ) {
+	if ( $row > $self->{last_row} || $row < 1 ) {
 		print STDERR "\n$0:setRowClass: Invalid table reference" ;
 		return 0;
 	}
 	
-	$self->{'table:RowClass'}{"$row"} = $html_str ;
+	$self->{rows}[$row]->{class} = $html_str ;
 }
 
 
@@ -1754,6 +1731,7 @@ sub setRowClass {
 # Author:       Stacy Lacy	
 # Date:			30 Jul 1997
 # Modified:		23 Oct 2003 - Anthony Peacock
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setRowVAlign {
    my $self = shift;
@@ -1761,20 +1739,21 @@ sub setRowVAlign {
    my $valign = shift;
 
 	# If -1 is used in the row parameter, use the last row
-	$row = $self->{rows} if $row == -1;
+	$row = $self->{last_row} if $row == -1;
 
-	if ( $row > $self->{rows} || $row < 1 ) {
+	if ( $row > $self->{last_row} || $row < 1 ) {
 		print STDERR "\n$0:setRowVAlign: Invalid table reference" ;
 		return 0;
 	}
 	
-	$self->{'table:RowVAlign'}{"$row"} = $valign ;
+	$self->{rows}[$row]->{valign} = $valign ;
 }
 
 #-------------------------------------------------------
 # Subroutine:  	setRowHead(row_num, [0|1]) 
 # Author:       Stacy Lacy	
 # Date:			30 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setRowHead {
    my $self = shift;
@@ -1782,17 +1761,17 @@ sub setRowHead {
    my $value = shift || 1;
 
 	# If -1 is used in the row parameter, use the last row
-	$row = $self->{rows} if $row == -1;
+	$row = $self->{last_row} if $row == -1;
 
-	if ( $row > $self->{rows} || $row < 1 ) {
+	if ( $row > $self->{last_row} || $row < 1 ) {
 		print STDERR "\n$0:setRowHead: Invalid table reference" ;
 		return 0;
 	}
 
    # this sub should change the head flag of a row;
    my $i;
-   for ($i=1;$i <= $self->{cols};$i++) {
-      $self->setCellHead($row,$i, $value);
+   for ($i=1;$i <= $self->{last_col};$i++) {
+      $self->setCellHead($row, $i, $value);
    }
 }
 
@@ -1801,6 +1780,7 @@ sub setRowHead {
 # Author:       Anthony Peacock
 # Date:		22 Feb 2001
 # Modified:		23 Oct 2003 - Anthony Peacock
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setRowNoWrap {
    my $self = shift;
@@ -1808,20 +1788,21 @@ sub setRowNoWrap {
    my $value = shift;
    
 	# If -1 is used in the row parameter, use the last row
-	$row = $self->{rows} if $row == -1;
+	$row = $self->{last_row} if $row == -1;
 
-	if ( $row > $self->{rows} || $row < 1 ) {
+	if ( $row > $self->{last_row} || $row < 1 ) {
 		print STDERR "\n$0:setRowNoWrap: Invalid table reference" ;
 		return 0;
 	}
 	
-	$self->{'table:RowNoWrap'}{"$row"} = $value ;
+	$self->{rows}[$row]->{nowrap} = $value ;
 }
 
 #-------------------------------------------------------
 # Subroutine:  	setRowWidth(row_num, [pixels|percentoftable]) 
 # Author:       Anthony Peacock
 # Date:		22 Feb 2001
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setRowWidth {
    my $self = shift;
@@ -1829,16 +1810,16 @@ sub setRowWidth {
    my $value = shift;
    
 	# If -1 is used in the row parameter, use the last row
-	$row = $self->{rows} if $row == -1;
+	$row = $self->{last_row} if $row == -1;
 
-	if ( $row > $self->{rows} || $row < 1 ) {
+	if ( $row > $self->{last_row} || $row < 1 ) {
 		print STDERR "\n$0:setRowWidth: Invalid table reference" ;
 		return 0;
 	}
 
    # this sub should change the cell width of a row;
    my $i;
-   for ($i=1;$i <= $self->{cols};$i++) {
+   for ($i=1;$i <= $self->{last_col};$i++) {
       $self->setCellWidth($row, $i, $value);
    }
 }
@@ -1847,6 +1828,7 @@ sub setRowWidth {
 # Subroutine:  	setRowHeight(row_num, [pixels]) 
 # Author:       Anthony Peacock
 # Date:		22 Feb 2001
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setRowHeight {
    my $self = shift;
@@ -1854,16 +1836,16 @@ sub setRowHeight {
    my $value = shift;
    
 	# If -1 is used in the row parameter, use the last row
-	$row = $self->{rows} if $row == -1;
+	$row = $self->{last_row} if $row == -1;
 
-	if ( $row > $self->{rows} || $row < 1 ) {
+	if ( $row > $self->{last_row} || $row < 1 ) {
 		print STDERR "\n$0:setRowHeight: Invalid table reference" ;
 		return 0;
 	}
 
    # this sub should change the cell height of a row;
    my $i;
-   for ($i=1;$i <= $self->{cols};$i++) {
+   for ($i=1;$i <= $self->{last_col};$i++) {
       $self->setCellHeight($row, $i, $value);
    }
 }
@@ -1873,6 +1855,7 @@ sub setRowHeight {
 # Author:		Arno Teunisse 	
 # Date:			08 Jan 2002
 # Modified:		10 Jan 2002 - Anthony Peacock
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setRowBGColor {
 	my $self = shift;
@@ -1880,15 +1863,15 @@ sub setRowBGColor {
 	my $value = shift;
 
 	# If -1 is used in the row parameter, use the last row
-	$row = $self->{rows} if $row == -1;
+	$row = $self->{last_row} if $row == -1;
 
 	# You cannot set a nonexistent row
-	if ( $row > $self->{rows} || $row < 1 ) {
+	if ( $row > $self->{last_row} || $row < 1 ) {
 		print STDERR "\n$0:setRowBGColor: Invalid table reference" ;
 		return 0;
 	}
 	
-	$self->{"table:RowBGColor"}{"$row"} = $value  ;
+	$self->{rows}[$row]->{bgcolor} = $value  ;
 }
 
 
@@ -1896,6 +1879,7 @@ sub setRowBGColor {
 # Subroutine:  	setRowFormat(row_num, start_string, end_string) 
 # Author:       Anthony Peacock
 # Date:			21 Feb 2001
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setRowFormat {
    my $self = shift;
@@ -1903,10 +1887,10 @@ sub setRowFormat {
    my ($start_string, $end_string) = @_;
    
 	# If -1 is used in the row parameter, use the last row
-	$row = $self->{rows} if $row == -1;
+	$row = $self->{last_row} if $row == -1;
 
 	# You cannot set a nonexistent row
-	if ( $row > $self->{rows} || $row < 1 ) {
+	if ( $row > $self->{last_row} || $row < 1 ) {
 		print STDERR "\n$0:setRowFormat: Invalid table reference" ;
 		return 0;
 	}
@@ -1914,7 +1898,7 @@ sub setRowFormat {
    # this sub should set format strings for each
    # cell in a row given a row number;
    my $i;
-   for ($i=1;$i <= $self->{cols};$i++) {
+   for ($i=1;$i <= $self->{last_col};$i++) {
       $self->setCellFormat($row,$i, $start_string, $end_string);
    }
 }
@@ -1924,6 +1908,7 @@ sub setRowFormat {
 # Comment:		To add user defined attribute to specified row
 # Author:		Anthony Peacock
 # Date:			10 Jan 2002
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub setRowAttr {
 	my $self = shift;
@@ -1931,15 +1916,15 @@ sub setRowAttr {
 	my $html_str = shift;
 
 	# If -1 is used in the row parameter, use the last row
-	$row = $self->{rows} if $row == -1;
+	$row = $self->{last_row} if $row == -1;
 
 	# You cannot set a nonexistent row
-	if ( $row > $self->{rows} || $row < 1 ) {
+	if ( $row > $self->{last_row} || $row < 1 ) {
 		print STDERR "\n$0:setRowAttr: Invalid table reference" ;
 		return 0;
 	}
 	
-	$self->{"table:RowAttr"}{"$row"} = "$html_str"  ;
+	$self->{rows}[$row]->{attr} = $html_str;
 }
 
 #-------------------------------------------------------
@@ -1951,6 +1936,7 @@ sub setRowAttr {
 # Subroutine:  	addCol("cell 1 content" [, "cell 2 content",  ...]) 
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub addCol {
    my $self = shift;
@@ -1959,14 +1945,14 @@ sub addCol {
    my $count= @_;
    # if number of cells is greater than rows, let's assume
    # we want to add a row.
-   $self->{rows} = $count if ($count >$self->{rows});
-   $self->{cols}++;  # increment number of rows
+   $self->{last_row} = $count if ($count >$self->{last_row});
+   $self->{last_col}++;  # increment number of rows
    my $i;
    for ($i=1;$i <= $count;$i++) {
       # Store each value in cell on row
-      $self->{table}{"$i:$self->{cols}"} = shift;
+      $self->{rows}[$i]->{cells}[$self->{last_col}]->{contents} = shift;
    }
-   return $self->{cols};
+   return $self->{last_col};
 
 }
 
@@ -1981,17 +1967,17 @@ sub setColAlign {
    my $align = shift;
 
 	# If -1 is used in the col parameter, use the last col
-	$col = $self->{cols} if $col == -1;
+	$col = $self->{last_col} if $col == -1;
 
 	# You cannot set a nonexistent row
-	if ( $col > $self->{cols} || $col < 1 ) {
+	if ( $col > $self->{last_col} || $col < 1 ) {
 		print STDERR "\n$0:setColAlign: Invalid table reference" ;
 		return 0;
 	}
 
    # this sub should align a col given a col number;
    my $i;
-   for ($i=1;$i <= $self->{rows};$i++) {
+   for ($i=1;$i <= $self->{last_row};$i++) {
       $self->setCellAlign($i,$col, $align);
    }
 }
@@ -2007,17 +1993,17 @@ sub setColVAlign {
    my $valign = shift;
 
 	# If -1 is used in the col parameter, use the last col
-	$col = $self->{cols} if $col == -1;
+	$col = $self->{last_col} if $col == -1;
 
 	# You cannot set a nonexistent row
-	if ( $col > $self->{cols} || $col < 1 ) {
+	if ( $col > $self->{last_col} || $col < 1 ) {
 		print STDERR "\n$0:setColVAlign: Invalid table reference" ;
 		return 0;
 	}
 
    # this sub should align a all rows given a column number;
    my $i;
-   for ($i=1;$i <= $self->{rows};$i++) {
+   for ($i=1;$i <= $self->{last_row};$i++) {
       $self->setCellVAlign($i,$col, $valign);
    }
 }
@@ -2033,17 +2019,17 @@ sub setColHead {
    my $value = shift || 1;
 
 	# If -1 is used in the col parameter, use the last col
-	$col = $self->{cols} if $col == -1;
+	$col = $self->{last_col} if $col == -1;
 
 	# You cannot set a nonexistent row
-	if ( $col > $self->{cols} || $col < 1 ) {
+	if ( $col > $self->{last_col} || $col < 1 ) {
 		print STDERR "\n$0:setColHead: Invalid table reference" ;
 		return 0;
 	}
 
    # this sub should set the head attribute of a col given a col number;
    my $i;
-   for ($i=1;$i <= $self->{rows};$i++) {
+   for ($i=1;$i <= $self->{last_row};$i++) {
       $self->setCellHead($i,$col, $value);
    }
 }
@@ -2059,17 +2045,17 @@ sub setColNoWrap {
    my $value = shift;
 
 	# If -1 is used in the col parameter, use the last col
-	$col = $self->{cols} if $col == -1;
+	$col = $self->{last_col} if $col == -1;
 
 	# You cannot set a nonexistent row
-	if ( $col > $self->{cols} || $col < 1 ) {
+	if ( $col > $self->{last_col} || $col < 1 ) {
 		print STDERR "\n$0:setColNoWrap: Invalid table reference" ;
 		return 0;
 	}
 
    # this sub should change the wrap flag of a column;
    my $i;
-   for ($i=1;$i <= $self->{rows};$i++) {
+   for ($i=1;$i <= $self->{last_row};$i++) {
       $self->setCellNoWrap($i,$col, $value);
    }
 }
@@ -2085,17 +2071,17 @@ sub setColWidth {
    my $value = shift;
 
 	# If -1 is used in the col parameter, use the last col
-	$col = $self->{cols} if $col == -1;
+	$col = $self->{last_col} if $col == -1;
 
 	# You cannot set a nonexistent row
-	if ( $col > $self->{cols} || $col < 1 ) {
+	if ( $col > $self->{last_col} || $col < 1 ) {
 		print STDERR "\n$0:setColWidth: Invalid table reference" ;
 		return 0;
 	}
 
    # this sub should change the cell width of a col;
    my $i;
-   for ($i=1;$i <= $self->{rows};$i++) {
+   for ($i=1;$i <= $self->{last_row};$i++) {
       $self->setCellWidth($i, $col, $value);
    }
 }
@@ -2111,17 +2097,17 @@ sub setColHeight {
    my $value = shift;
    
 	# If -1 is used in the col parameter, use the last col
-	$col = $self->{cols} if $col == -1;
+	$col = $self->{last_col} if $col == -1;
 
 	# You cannot set a nonexistent row
-	if ( $col > $self->{cols} || $col < 1 ) {
+	if ( $col > $self->{last_col} || $col < 1 ) {
 		print STDERR "\n$0:setColHeight: Invalid table reference" ;
 		return 0;
 	}
 
    # this sub should change the cell height of a col;
    my $i;
-   for ($i=1;$i <= $self->{rows};$i++) {
+   for ($i=1;$i <= $self->{last_row};$i++) {
       $self->setCellHeight($i, $col, $value);
    }
 }
@@ -2137,10 +2123,10 @@ sub setColBGColor{
    my $value = shift || 1;
 
 	# If -1 is used in the col parameter, use the last col
-	$col = $self->{cols} if $col == -1;
+	$col = $self->{last_col} if $col == -1;
 
 	# You cannot set a nonexistent row
-	if ( $col > $self->{cols} || $col < 1 ) {
+	if ( $col > $self->{last_col} || $col < 1 ) {
 		print STDERR "\n$0:setColBGColor: Invalid table reference" ;
 		return 0;
 	}
@@ -2148,7 +2134,7 @@ sub setColBGColor{
    # this sub should set bgcolor for each
    # cell in a col given a col number;
    my $i;
-   for ($i=1;$i <= $self->{rows};$i++) {
+   for ($i=1;$i <= $self->{last_row};$i++) {
       $self->setCellBGColor($i,$col, $value);
    }
 }
@@ -2164,10 +2150,10 @@ sub setColStyle{
    my $value = shift || 1;
 
 	# If -1 is used in the col parameter, use the last col
-	$col = $self->{cols} if $col == -1;
+	$col = $self->{last_col} if $col == -1;
 
 	# You cannot set a nonexistent row
-	if ( $col > $self->{cols} || $col < 1 ) {
+	if ( $col > $self->{last_col} || $col < 1 ) {
 		print STDERR "\n$0:setColStyle: Invalid table reference" ;
 		return 0;
 	}
@@ -2175,7 +2161,7 @@ sub setColStyle{
    # this sub should set style for each
    # cell in a col given a col number;
    my $i;
-   for ($i=1;$i <= $self->{rows};$i++) {
+   for ($i=1;$i <= $self->{last_row};$i++) {
       $self->setCellStyle($i,$col, $value);
    }
 }
@@ -2191,10 +2177,10 @@ sub setColClass{
    my $value = shift || 1;
 
 	# If -1 is used in the col parameter, use the last col
-	$col = $self->{cols} if $col == -1;
+	$col = $self->{last_col} if $col == -1;
 
 	# You cannot set a nonexistent row
-	if ( $col > $self->{cols} || $col < 1 ) {
+	if ( $col > $self->{last_col} || $col < 1 ) {
 		print STDERR "\n$0:setColClass: Invalid table reference" ;
 		return 0;
 	}
@@ -2202,7 +2188,7 @@ sub setColClass{
    # this sub should set class for each
    # cell in a col given a col number;
    my $i;
-   for ($i=1;$i <= $self->{rows};$i++) {
+   for ($i=1;$i <= $self->{last_row};$i++) {
       $self->setCellClass($i,$col, $value);
    }
 }
@@ -2218,10 +2204,10 @@ sub setColFormat{
    my ($start_string, $end_string) = @_;
    
 	# If -1 is used in the col parameter, use the last col
-	$col = $self->{cols} if $col == -1;
+	$col = $self->{last_col} if $col == -1;
 
 	# You cannot set a nonexistent row
-	if ( $col > $self->{cols} || $col < 1 ) {
+	if ( $col > $self->{last_col} || $col < 1 ) {
 		print STDERR "\n$0:setColFormat: Invalid table reference" ;
 		return 0;
 	}
@@ -2229,7 +2215,7 @@ sub setColFormat{
    # this sub should set format strings for each
    # cell in a col given a col number;
    my $i;
-   for ($i=1;$i <= $self->{rows};$i++) {
+   for ($i=1;$i <= $self->{last_row};$i++) {
       $self->setCellFormat($i,$col, $start_string, $end_string);
    }
 }
@@ -2245,10 +2231,10 @@ sub setColAttr {
    my $html_str = shift;
 
 	# If -1 is used in the col parameter, use the last col
-	$col = $self->{cols} if $col == -1;
+	$col = $self->{last_col} if $col == -1;
 
 	# You cannot set a nonexistent row
-	if ( $col > $self->{cols} || $col < 1 ) {
+	if ( $col > $self->{last_col} || $col < 1 ) {
 		print STDERR "\n$0:setColAttr: Invalid table reference" ;
 		return 0;
 	}
@@ -2256,7 +2242,7 @@ sub setColAttr {
    # this sub should set attribute string for each
    # cell in a col given a col number;
    my $i;
-   for ($i=1;$i <= $self->{rows};$i++) {
+   for ($i=1;$i <= $self->{last_row};$i++) {
       $self->setCellAttr($i,$col, $html_str);
    }
 }
@@ -2275,37 +2261,38 @@ sub setColAttr {
 # Subroutine:  	_updateSpanGrid(row_num, col_num)
 # Author:       Stacy Lacy	
 # Date:		31 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub _updateSpanGrid {
    my $self = shift;
    (my $row = shift) || return 0;
    (my $col = shift) || return 0;
 
-   my $colspan = $self->{"table:cellcolspan"}{"$row:$col"} || 0;
-   my $rowspan = $self->{"table:cellrowspan"}{"$row:$col"} || 0;
+   my $colspan = $self->{rows}[$row]->{cells}[$col]->{colspan} || 0;
+   my $rowspan = $self->{rows}[$row]->{cells}[$col]->{rowspan} || 0;
 
 	if ($self->{autogrow}) {
-		$self->{cols} = $col + $colspan - 1 unless $self->{cols} > ($col + $colspan - 1 );
-		$self->{rows} = $row + $rowspan - 1 unless $self->{rows} > ($row + $rowspan - 1 );
+		$self->{last_col} = $col + $colspan - 1 unless $self->{last_col} > ($col + $colspan - 1 );
+		$self->{last_row} = $row + $rowspan - 1 unless $self->{last_row} > ($row + $rowspan - 1 );
 	}
 
    my ($i, $j);
    if ($colspan) {
-      for ($j=$col+1;(($j <= $self->{cols}) && ($j <= ($col +$colspan -1))); $j++ ) {
-            $self->{"table:cellspan"}{"$row:$j"} = "SPANNED";
+      for ($j=$col+1;(($j <= $self->{last_col}) && ($j <= ($col +$colspan -1))); $j++ ) {
+			$self->{rows}[$row]->{cells}[$j]->{colspan} = "SPANNED";
       }
    }
    if ($rowspan) {
-      for ($i=$row+1;(($i <= $self->{rows}) && ($i <= ($row +$rowspan -1))); $i++) {
-            $self->{"table:cellspan"}{"$i:$col"} = "SPANNED";
+      for ($i=$row+1;(($i <= $self->{last_row}) && ($i <= ($row +$rowspan -1))); $i++) {
+			$self->{rows}[$i]->{cells}[$col]->{colspan} = "SPANNED";
       }
    }
 
    if ($colspan && $rowspan) {
       # Spanned Grid
-      for ($i=$row+1;(($i <= $self->{rows}) && ($i <= ($row +$rowspan -1))); $i++) {
-         for ($j=$col+1;(($j <= $self->{cols}) && ($j <= ($col +$colspan -1))); $j++ ) {
-            $self->{"table:cellspan"}{"$i:$j"} = "SPANNED";
+      for ($i=$row+1;(($i <= $self->{last_row}) && ($i <= ($row +$rowspan -1))); $i++) {
+         for ($j=$col+1;(($j <= $self->{last_col}) && ($j <= ($col +$colspan -1))); $j++ ) {
+			$self->{rows}[$i]->{cells}[$j]->{colspan} = "SPANNED";
          }
       }
    }
@@ -2321,8 +2308,8 @@ sub _getTableHashValues {
    (my $hashname = shift) || return 0;
 
    my ($i, $j, $retval);
-   for ($i=1; $i <= ($self->{rows}); $i++) {
-      for ($j=1; $j <= ($self->{cols}); $j++) {
+   for ($i=1; $i <= ($self->{last_row}); $i++) {
+      for ($j=1; $j <= ($self->{last_col}); $j++) {
          $retval.= "|$i:$j| " . ($self->{"$hashname"}{"$i:$j"}) . " ";
       }
       $retval.=" |<br />";

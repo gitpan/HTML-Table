@@ -1,5 +1,11 @@
 Revision history for Perl extension HTML::Table.
 
+2.00-beta
+	  24 Oct 2003
+	- First beta test version of the 2.xx strand.  This version introduces a new
+	  internal representation for the table data and attributes which should make
+	  maintenance and development much easier.
+
 1.20  22 Oct 2003
 	- Changed setRowVAlign to set the attribute in the TR tag instead of in each 
 	  TD tag.

@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.03';
+$VERSION = '1.04';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -507,7 +507,7 @@ sub getTable {
       $html .="<TR>";
       for ($j=1; $j <= ($self->{cols}); $j++) {
           
-          if ($self->{"table:cellspan"}{"$i:$j"} eq "SPANNED"){
+          if (defined $self->{"table:cellspan"}{"$i:$j"} && $self->{"table:cellspan"}{"$i:$j"} eq "SPANNED"){
              $html.="<!-- spanned cell -->";
              next
           }

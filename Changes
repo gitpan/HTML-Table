@@ -1,5 +1,8 @@
 Revision history for Perl extension HTML::Table.
 
+1.04  17 August 2000
+    - Minor change to remove 'uninitialized variable' warning when working with -w
+
 1.03  13 July 2000
 	- Overloaded the "" string interpolation operator onto the getTable method.
       This alows the use of the object reference 'in-line' in strings.

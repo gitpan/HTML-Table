@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.07c';
+$VERSION = '1.07d';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -664,11 +664,10 @@ sub setCaption {
    my $self = shift;
    $self->{caption} = shift ;
    my $align = uc(shift);
-   if (defined $align && (($align eq "TOP") || ($align eq "BOTTOM")) ) {
+   if (defined $align && (($align eq 'TOP') || ($align eq 'BOTTOM')) ) {
       $self->{caption_align} = $align;
    } else {
-      print STDERR "$0:setCaption:Invalid Alignment\n";
-      return 0;
+      $self->{caption_align} = 'TOP';
    }
 }
 

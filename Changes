@@ -1,5 +1,9 @@
 Revision history for Perl extension HTML::Table.
 
+1.10  06 Aug 2001
+	- Added getTableRows and getTableCols.
+	  Suggested by Joerg Jaspert <joerg@goliathbbs.dnsalias.net>
+
 1.09  23 May 2001
 	- Fixed bug in setRowHeight, which was mistakenly setting the width.
 	  Thanks to Rodger Allen <r.allen@awayweb.com> for pointing this out

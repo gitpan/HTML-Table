@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.09';
+$VERSION = '1.10';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -130,6 +130,14 @@ Remember to escape percent symbol if used
 Switches on (default) or off automatic growing of the table
 if row or column values passed to setCell exceed current
 table size.
+
+=item getTableRows
+
+Returns the number of rows in the table.
+
+=item getTableCols
+
+Returns the number of columns in the table.
 
 =back
 
@@ -673,6 +681,26 @@ sub setCaption {
    } else {
       $self->{caption_align} = 'TOP';
    }
+}
+
+#-------------------------------------------------------
+# Subroutine:  	getTableRows 
+# Author:       Joerg Jaspert
+# Date:			4 Aug 2001
+#-------------------------------------------------------
+sub getTableRows{
+    my $self = shift;
+    return $self->{rows};
+}
+
+#-------------------------------------------------------
+# Subroutine:  	getTableCols 
+# Author:       Joerg Jaspert
+# Date:			4 Aug 2001
+#-------------------------------------------------------
+sub getTableCols{
+    my $self = shift;
+    return $self->{cols};
 }
 
 #-------------------------------------------------------

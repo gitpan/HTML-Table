@@ -3,8 +3,8 @@ use strict;
 
 use 5.002;
 
-use vars qw($VERSION);
-$VERSION = '1.15';
+use vars qw($VERSION $AUTOLOAD);
+$VERSION = '1.16';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -21,14 +21,15 @@ HTML::Table - produces HTML tables
     or
   $table1 = new HTML::Table(-rows=>26,
                             -cols=>2,
-                            -align=>"center",
-                            -rules=>"rows",
+                            -align=>'center',
+                            -rules=>'rows',
                             -border=>0,
-                            -bgcolor=>"blue",
-                            -width=>"50\%",
+                            -bgcolor=>'blue',
+                            -width=>'50%',
                             -spacing=>0,
                             -padding=>0,
-                            -style=>"color: blue");
+                            -style=>'color: blue',
+                            -class=>'myclass' );
 
   $table1->setCell($cellrow, $cellcol, 'This is Cell 1');
   $table1->setCellBGColor('blue');
@@ -97,6 +98,7 @@ considered an empty table.
 		 -border=>border_width,
 		 -align=>table_alignment,
 		 -style=>table_style,
+ 		 -class=>table_class,
 		 -bgcolor=>back_colour, 
 		 -width=>table_width, 
 		 -spacing=>cell_spacing, 
@@ -105,7 +107,7 @@ considered an empty table.
 Creates a new HTML table object.  If rows and columns
 are specified, the table will be initialized to that
 size.  Row and Column numbers start at 1,1.  0,0 is
-considered and empty table.
+considered an empty table.
 
 =back
 
@@ -147,10 +149,29 @@ table size.
 
 Sets the table style attribute.
 
+=item setClass ( 'css class' ) 
+
+Sets the table class attribute.
+
 =item setAttr ( 'user attribute' ) 
 
 Sets a user defined attribute for the table.  Useful for when
 HTML::Table hasn't implemented a particular attribute yet
+
+=item sort ( [sort_col_num, sort_type, sort_order, num_rows_to_skip] )
+
+      or 
+  sort( -sort_col => sort_col_num, 
+        -sort_type => sort_type
+        -sort_order => sort_order
+        -skip_rows => num_rows_to_skip )
+
+    sort_type in { ALPHA | NUMERIC }, 
+    sort_order in { ASC | DESC }
+
+Sort all rows on a given column (optionally skipping table header rows
+by specifiying num_rows_to_skip).
+
 
 =item getTableRows
 
@@ -213,12 +234,10 @@ Causes the cell to overlap a number of cells to the right.
 If the overlap number is greater than number of cells to
 the right of the cell, a false value will be returned.
 
-=item setCellSpan(upleft_row_num, up_left_col_num,
-        lowright_row_num, lowrigt_col_num)
+=item setCellSpan(row_num, col_num, num_rows, num_cols)
 
-Joins the block of cells with the corners specified.
-If the values specified are greater than the number of
-rows or columns, a false value will be returned.
+Joins the block of cells with the starting cell specified.
+The joined area will be num_cols wide and num_rows deep.
 
 =item setCellFormat(row_num, col_num, start_string, end_string)
 
@@ -231,6 +250,10 @@ This enables formatting to be applied to the cell contents.
 =item setCellStyle (row_num, col_num, 'css style') 
 
 Sets the cell style attribute.
+
+=item setCellClass (row_num, col_num, 'css class') 
+
+Sets the cell class attribute.
 
 =item setCellAttr (row_num, col_num, 'user attribute') 
 
@@ -289,6 +312,10 @@ Applies setCellFormat over the entire column.
 
 Applies setCellStyle over the entire column.
 
+=item setColClass (col_num, 'css class') 
+
+Applies setCellClass over the entire column.
+
 =item setColAttr (col_num, 'user attribute') 
 
 Applies setCellAttr over the entire column.
@@ -340,6 +367,10 @@ Applies setCellFormat over the entire row.
 =item setRowStyle (row_num, 'css style') 
 
 Applies setCellStyle over the entire row.
+
+=item setRowClass (row_num, 'css class') 
+
+Applies setCellClass over the entire row.
 
 =item setRowAttr (row_num, 'user attribute') 
 
@@ -406,6 +437,16 @@ For autogrow behaviour of setCell, and allowing alignment specifications to be c
 
 Arno Teunisse, Arno.Teunisse@Simac.nl
 For the methods adding rules, styles and table alignment attributes.
+
+Ville Skyttä, ville.skytta@iki.fi
+For general fixes
+
+Paul Vernaza, vernaza@stwing.upenn.edu
+For the setLast... methods
+
+David Link, dvlink@yahoo.com
+For the sort method
+
 
 =head1 COPYRIGHT
 
@@ -484,6 +525,7 @@ if (defined $_[0] && $_[0] =~ /^-/) {
     $self->{align} = $flags{-align} || undef;
     $self->{rules} = $flags{-rules} || undef;
     $self->{style} = $flags{-style} || undef;
+    $self->{class} = $flags{-class} || undef;
     $self->{bgcolor} = $flags{-bgcolor} || undef;
     $self->{background} = $flags{-background} || undef;
     $self->{width} = $flags{-width} || undef;
@@ -556,11 +598,12 @@ sub getTable {
    $html .=" rules=\"$self->{rules}\"" if defined $self->{rules} ;		# add rules for table
    $html .=" align=\"$self->{align}\"" if defined $self->{align} ; 		# alignment of the table
    $html .=" style=\"$self->{style}\"" if defined $self->{style} ; 		# style for the table
+   $html .=" class=\"$self->{class}\"" if defined $self->{class} ; 		# class for the table
    $html .=" $self->{attr}" if defined $self->{attr} ;		 		# user defined attribute string
    $html .=">\n";
    if (defined $self->{caption}) {
       $html .="<caption";
-      $html .=" align=$self->{caption_align}" if (defined $self->{caption_align});
+      $html .=" align=\"$self->{caption_align}\"" if (defined $self->{caption_align});
       $html .=">$self->{caption}</caption>\n";
    }
 
@@ -573,6 +616,7 @@ sub getTable {
 		$html .= ' bgcolor="' . $self->{'table:RowBGColor'}{$i} . '"' if defined $self->{'table:RowBGColor'}{$i};
 		$html .= ' align="' . $self->{'table:RowAlign'}{$i} . '"'  if defined $self->{'table:RowAlign'}{$i};		
 		$html .= ' style="' . $self->{'table:RowStyle'}{$i} . '"'  if defined $self->{'table:RowStyle'}{$i} ;
+		$html .= ' class="' . $self->{'table:RowClass'}{$i} . '"'  if defined $self->{'table:RowClass'}{$i} ;
 		$html .= " $self->{'table:RowAttr'}{$i}" if defined $self->{'table:RowAttr'}{$i} ;
 		$html .= ">" ; 	# Closing tr tag
 		
@@ -592,7 +636,7 @@ sub getTable {
           }
 
           # if alignment options are set, add them in the cell tag
-          $html .=" align=\"" . $self->{"table:align"}{"$i:$j"} . "\""
+          $html .=' align="' . $self->{"table:align"}{"$i:$j"} . '"'
                 if defined $self->{"table:align"}{"$i:$j"};
           
           $html .=" valign=\"" . $self->{"table:valign"}{"$i:$j"} . "\""
@@ -611,6 +655,10 @@ sub getTable {
           # apply style if set
           $html .=" style=\"" . $self->{"table:cellstyle"}{"$i:$j"} . "\""
                 if defined $self->{"table:cellstyle"}{"$i:$j"};
+
+          # apply class if set
+          $html .=" class=\"" . $self->{"table:cellclass"}{"$i:$j"} . "\""
+                if defined $self->{"table:cellclass"}{"$i:$j"};
 
           # User defined attribute
           $html .=" " . $self->{"table:cellattr"}{"$i:$j"}
@@ -710,6 +758,16 @@ sub setBGColor {
 sub setStyle {
    my $self = shift;
    $self->{style} = shift || undef;
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setClass(css class) 
+# Author:       Anthony Peacock
+# Date:			22 July 2002
+#-------------------------------------------------------
+sub setClass {
+   my $self = shift;
+   $self->{class} = shift || undef;
 }
 
 #-------------------------------------------------------
@@ -822,6 +880,52 @@ sub getTableCols{
 }
 
 #-------------------------------------------------------
+# Subroutine:  	sort (sort_col_num, [ALPHA|NUMERIC], [ASC|DESC], 
+#                         num_rows_to_skip)
+#               sort (-sort_col=>sort_col_num, 
+#                         -sort_type=>[ALPHA|NUMERIC], 
+#                         -sort_order=>[ASC|DESC], 
+#                         -skip_rows=>num_rows_to_skip)
+# Author:       David Link
+# Date:			28 Jun 2002
+#-------------------------------------------------------
+sub sort {
+  my $self = shift;
+  my ($sort_col, $sort_type, $sort_order, $skip_rows);
+  if (defined $_[0] && $_[0] =~ /^-/) {
+      my %flag = @_;
+      $sort_col = $flag{-sort_col} || 1;
+      $sort_type = $flag{-sort_type} || "ALPHA";
+      $sort_order = $flag{-sort_order} || "ASC";
+      $skip_rows = $flag{-skip_rows} || 0;
+  }
+  else {
+      $sort_col = shift || 1;
+      $sort_type = shift || "ALPHA";
+      $sort_order = shift || "ASC";
+      $skip_rows = shift || 0;
+  }
+  my $cmp_symbol = uc($sort_type) eq "ALPHA" ? "cmp" : "<=>";
+  my ($first, $last) = uc($sort_order) eq "ASC"?("\$a", "\$b"):("\$b", "\$a");
+  my $sortfunc = qq/
+      sub { \$self->{table}{"$first:$sort_col"} $cmp_symbol 
+            \$self->{table}{"$last:$sort_col" } }
+  /;
+  my $sorter = eval($sortfunc);
+  my @sortkeys = sort $sorter (($skip_rows+1)..$self->{rows});
+
+  my %holdtable = %{$self->{table}};
+  my $i = $skip_rows;
+  for my $k (@sortkeys) {
+      ++$i;
+      for (my $j=1; $j <= $self->{cols}; $j++) {
+	  $self->{table}{"$i:$j"} = $holdtable{"$k:$j"};
+      }
+  }
+}
+
+
+#-------------------------------------------------------
 # Cell config methods
 # 
 #-------------------------------------------------------
@@ -916,8 +1020,8 @@ sub setCellAlign {
       return ($row, $col);
    }
 
-   if (! (($align eq "CENTER") || ($align eq "RIGHT") || 
-          ($align eq "LEFT"))) {
+   if (! (($align eq 'CENTER') || ($align eq 'RIGHT') || 
+          ($align eq 'LEFT'))) {
       print STDERR "$0:setCellAlign:Invalid alignment type\n";
       return 0;
    }
@@ -1118,6 +1222,42 @@ sub setCellBGColor {
 }
 
 #-------------------------------------------------------
+# Subroutine:  	setCellSpan(row_num, col_num, num_rows, num_cols)
+# Author:       Anthony Peacock
+# Date:			22 July 2002
+#-------------------------------------------------------
+sub setCellSpan {
+   my $self = shift;
+   (my $row = shift) || return 0;
+   (my $col = shift) || return 0;
+   (my $num_rows = shift);
+   (my $num_cols = shift);
+
+   if (($row > $self->{rows}) || ($row < 1) ) {
+      print STDERR "$0:setCellpan:Invalid table reference\n";
+      return 0;
+   }
+   if (($col > $self->{cols}) || ($col < 1) ) {
+      print STDERR "$0:setCellSpan:Invalid table reference\n";
+      return 0;
+   }
+
+   if (! $num_cols || ! $num_rows) {
+      #return to default if none specified
+      undef $self->{'table:cellcolspan'}{"$row:$col"};
+      undef $self->{'table:cellrowspan'}{"$row:$col"};
+   }
+
+   $self->{'table:cellcolspan'}{"$row:$col"} = $num_cols;
+   $self->{'table:cellrowspan'}{"$row:$col"} = $num_rows;
+
+   $self->_updateSpanGrid($row,$col);
+   
+   return ($row, $col);
+
+}
+
+#-------------------------------------------------------
 # Subroutine:  	setCellRowSpan(row_num, col_num, num_cells)
 # Author:       Stacy Lacy	
 # Date:		31 Jul 1997
@@ -1242,11 +1382,41 @@ sub setCellStyle {
 
    if (! $value) {
       #return to default style if none specified
-      undef $self->{"table:cellstyle"}{"$row:$col"};
+      undef $self->{'table:cellstyle'}{"$row:$col"};
       return ($row, $col);
    }
 
-   $self->{"table:cellstyle"}{"$row:$col"} = $value;
+   $self->{'table:cellstyle'}{"$row:$col"} = $value;
+   return ($row, $col);
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setCellClass(row_num, col_num, "class") 
+# Author:       Anthony Peacock	
+# Date:			22 July 2002
+#-------------------------------------------------------
+sub setCellClass {
+   my $self = shift;
+   (my $row = shift) || return 0;
+   (my $col = shift) || return 0;
+   (my $value = shift);
+
+   if (($row > $self->{rows}) || ($row < 1) ) {
+      print STDERR "$0:setCellClass:Invalid table reference\n";
+      return 0;
+   }
+   if (($col > $self->{cols}) || ($col < 1) ) {
+      print STDERR "$0:setCellClass:Invalid table reference\n";
+      return 0;
+   }
+
+   if (! $value) {
+      #return to default class if none specified
+      undef $self->{'table:cellclass'}{"$row:$col"};
+      return ($row, $col);
+   }
+
+   $self->{'table:cellclass'}{"$row:$col"} = $value;
    return ($row, $col);
 }
 
@@ -1327,12 +1497,12 @@ sub setRowAlign {
 		return 0;
 	}
 	
-	$self->{"table:RowAlign"}{"$row"} = $align  ;
+	$self->{'table:RowAlign'}{$row} = $align  ;
 }
 
 #-------------------------------------------------------
 # Subroutine:	setRowStyle
-# Comment:		to insert a css style the <TR > Tag
+# Comment:		to insert a css style the <tr > Tag
 # Author:		Arno Teunisse
 # Date:			05 Jan 2002
 # Modified: 	10 Jan 2002 - Anthony Peacock
@@ -1348,7 +1518,27 @@ sub setRowStyle {
 		return 0;
 	}
 	
-	$self->{"table:RowStyle"}{"$row"} = "$html_str"  ;
+	$self->{'table:RowStyle'}{"$row"} = "$html_str"  ;
+}
+
+#-------------------------------------------------------
+# Subroutine:	setRowClass
+# Comment:		to insert a css class in the <tr > Tag
+# Author:		Anthony Peacock (based on setRowStyle by Arno Teunisse)
+# Date:			22 July 2002
+#-------------------------------------------------------
+sub setRowClass {
+	my $self = shift;
+	(my $row = shift) || return 0;
+	my $html_str = shift;
+
+	my $maxRows = $self-> getTableRows(); 
+	if ( $row > $maxRows || $row < 1 ) {
+		print STDERR "\n$0:setRowClass: Invalid table reference" ;
+		return 0;
+	}
+	
+	$self->{'table:RowClass'}{"$row"} = "$html_str"  ;
 }
 
 
@@ -1542,7 +1732,7 @@ sub addCol {
 }
 
 #-------------------------------------------------------
-# Subroutine:  	setColAlign(row_num, col_num, [CENTER|RIGHT|LEFT]) 
+# Subroutine:  	setColAlign(col_num, [CENTER|RIGHT|LEFT]) 
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
 #-------------------------------------------------------
@@ -1677,6 +1867,24 @@ sub setColStyle{
 }
 
 #-------------------------------------------------------
+# Subroutine:  	setColClass(col_num, 'class') 
+# Author:       Anthony Peacock
+# Date:			22 July 2002
+#-------------------------------------------------------
+sub setColClass{
+   my $self = shift;
+   (my $col = shift) || return 0;
+   my $value = shift || 1;
+
+   # this sub should set class for each
+   # cell in a col given a col number;
+   my $i;
+   for ($i=1;$i <= $self->{rows};$i++) {
+      $self->setCellClass($i,$col, $value);
+   }
+}
+
+#-------------------------------------------------------
 # Subroutine:  	setColFormat(row_num, start_string, end_string) 
 # Author:       Anthony Peacock
 # Date:			21 Feb 2001
@@ -1776,7 +1984,7 @@ sub _getTableHashValues {
       for ($j=1; $j <= ($self->{cols}); $j++) {
          $retval.= "|$i:$j| " . ($self->{"$hashname"}{"$i:$j"}) . " ";
       }
-      $retval.=" |<br>";
+      $retval.=" |<br />";
    }
 
    return $retval;
@@ -1798,6 +2006,48 @@ sub _is_validnum {
 	} else {
 		return;
 	}
+}
+
+#----------------------------------------------------------------------
+# Subroutine: _install_stateful_set_method
+# Author: Paul Vernaza
+# Date: 1 July 2002
+# Description: Generates and installs a stateful version of the given
+# setter method (in the sense that it 'remembers' the last row or 
+# column in the table and passes it as an implicit argument).
+#----------------------------------------------------------------------
+sub _install_stateful_set_method {
+    my ($called_method, $real_method) = @_;
+
+    die "$AUTOLOAD: No such method" if !exists($HTML::Table::{$real_method});
+    
+    my $row_andor_cell = $real_method =~ /^setCell/ ?
+	'($self->getTableRows, $self->getTableCols)' :
+	$real_method =~ /^setRow/ ? '$self->getTableRows' :
+	$real_method =~ /^setCol/ ? '$self->getTableCols' :
+	die 'can\'t determine argument type(s)';
+    
+    { no strict 'refs';
+      *$called_method = sub {
+	  my $self = shift();
+	  return &$real_method($self, eval ($row_andor_cell), @_);
+      }; }
+}
+
+#----------------------------------------------------------------------
+# Subroutine: AUTOLOAD
+# Author: Paul Vernaza
+# Date: 1 July 2002
+# Description: Intercepts calls to setLast* methods, generates them 
+# if possible from existing set-methods that require explicit row/column.
+#----------------------------------------------------------------------
+sub AUTOLOAD {
+    (my $called_method = $AUTOLOAD ) =~ s/.*:://;
+    return unless $called_method =~ /^setLast(Cell|Row|Col)/;
+
+    ( my $real_method = $called_method ) =~ s/^setLast/set/;
+    _install_stateful_set_method($called_method, $real_method);
+    goto &$called_method;
 }
 
 1;

@@ -1,12 +1,31 @@
 Revision history for Perl extension HTML::Table.
 
+1.16  22 July 2002
+	- Method setCellSpan was documented but not implemented.
+	  Thanks to David Link <dvlink@yahoo.com> for finding this
+
+	- Added methods setClass|setCellClass|setRowClass|setColClass.
+	  Thanks to Al Tobey <albert.tobey@priority-health.com> for suggesting this
+
+	- Added method sort.  Sorts a table by the values of a specified column.
+	  Sort can be numeric or alphanumeric, ascending or descending.
+	  Thanks to David Link <dvlink@yahoo.com> for this addition
+
+	- Added versions of the setCell|Row|Col methods, setLastCell|Row|Col.
+	  These automatically apply the method to the last Cell|Row|Col in the table.
+	  Thanks to Paul Vernaza <vernaza@stwing.upenn.edu> for this addition
+
+	- Added quotes around caption style parameter.
+	  Thanks to Ville Skyttä <ville.skytta@iki.fi> for fixing this
+	  
+  	- Changed the <br> tag to <br /> in _getTableHashValues.
+	  Thanks to Ville Skyttä <ville.skytta@iki.fi> for fixing this
+
 1.15  6 March 2002
-	Bug fixes
 	- Method setStyle missing although documented.
 	  Thanks to Hendrik Frenzel <hfrenzel@scunc.net> for finding this
 
 1.14  27 Feb 2002
-	Bug fixes
 	- Spurious double quote in the output after user defined table attributes
 	  Thanks to Benjamin Longuet <longuet@ill.fr> for fixing this
 

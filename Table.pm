@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '1.17';
+$VERSION = '1.18';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -164,17 +164,31 @@ HTML::Table hasn't implemented a particular attribute yet
 
 =item sort ( [sort_col_num, sort_type, sort_order, num_rows_to_skip] )
 
-      or 
+        or 
   sort( -sort_col => sort_col_num, 
-        -sort_type => sort_type
-        -sort_order => sort_order
-        -skip_rows => num_rows_to_skip )
+        -sort_type => sort_type,
+        -sort_order => sort_order,
+        -skip_rows => num_rows_to_skip,
+        -strip_html => strip_html,
+        -strip_non_numeric => strip_non_numeric,
+        -presort_func => \&filter_func )
 
     sort_type in { ALPHA | NUMERIC }, 
-    sort_order in { ASC | DESC }
+    sort_order in { ASC | DESC },
+    strip_html in { 0 | 1 }, defaults to 1,
+    strip_non_numeric in { 0 | 1 }, defaults to 1
 
-Sort all rows on a given column (optionally skipping table header rows
-by specifiying num_rows_to_skip).
+  Sort all rows on a given column (optionally skipping table header rows
+  by specifiying num_rows_to_skip).
+
+  By default sorting ignores HTML Tags and &nbsp, setting the strip_html parameter to 0 
+  disables this behaviour.
+
+  By default numeric Sorting ignores non numeric chararacters, setting the strip_non_numeric
+  parameter to 0 disables this behaviour.
+
+  You can provide your own pre-sort function, useful for pre-processing the cell contents 
+  before sorting for example dates.
 
 
 =item getTableRows
@@ -919,32 +933,58 @@ sub getTableCols{
 #               sort (-sort_col=>sort_col_num, 
 #                         -sort_type=>[ALPHA|NUMERIC], 
 #                         -sort_order=>[ASC|DESC], 
-#                         -skip_rows=>num_rows_to_skip)
+#                         -skip_rows=>num_rows_to_skip,
+#                         -strip_html=>[0|1],         # default 1
+#                         -strip_non_numeric=>[0|1],  # default 1 
+#                                                     # for sort_type=NUMERIC
+#                         -presort_func=>\&filter,
+#                     )
 # Author:       David Link
-# Date:			28 Jun 2002
+# Date:		28 Jun 2002
+# Modified:     09 Apr 2003 -- dl  Added options: -strip_html, 
+#                                  -strip_non_numeric, and -presort_func.
 #-------------------------------------------------------
 sub sort {
   my $self = shift;
-  my ($sort_col, $sort_type, $sort_order, $skip_rows);
+  my ($sort_col, $sort_type, $sort_order, $skip_rows, 
+      $strip_html, $strip_non_numeric, $presort_func);
+  $strip_html = 1;
+  $strip_non_numeric = 1;
   if (defined $_[0] && $_[0] =~ /^-/) {
       my %flag = @_;
       $sort_col = $flag{-sort_col} || 1;
       $sort_type = $flag{-sort_type} || "ALPHA";
       $sort_order = $flag{-sort_order} || "ASC";
       $skip_rows = $flag{-skip_rows} || 0;
+      $strip_html = $flag{-strip_html} if defined($flag{-strip_html});
+      $strip_non_numeric = $flag{-strip_non_numeric} 
+          if defined($flag{-strip_non_numeric});
+      $presort_func = $flag{-presort_func} || undef;
   }
   else {
       $sort_col = shift || 1;
       $sort_type = shift || "ALPHA";
       $sort_order = shift || "ASC";
       $skip_rows = shift || 0;
+      $presort_func = undef;
   }
   my $cmp_symbol = uc($sort_type) eq "ALPHA" ? "cmp" : "<=>";
   my ($first, $last) = uc($sort_order) eq "ASC"?("\$a", "\$b"):("\$b", "\$a");
-  my $sortfunc = qq/
-      sub { \$self->{table}{"$first:$sort_col"} $cmp_symbol 
-            \$self->{table}{"$last:$sort_col" } }
-  /;
+  my $piece1 = qq/\$self->{table}{"$first:$sort_col"}/;
+  my $piece2 = qq/\$self->{table}{"$last:$sort_col"}/;
+  if ($strip_html) {
+      $piece1 = qq/&_stripHTML($piece1)/;
+      $piece2 = qq/&_stripHTML($piece2)/;
+  }
+  if ($presort_func) {
+      $piece1 = qq/\&{\$presort_func}($piece1)/;
+      $piece2 = qq/\&{\$presort_func}($piece2)/;
+  } 
+  if (uc($sort_type) ne 'ALPHA' && $strip_non_numeric) {
+      $piece1 = qq/&_stripNonNumeric($piece1)/;
+      $piece2 = qq/&_stripNonNumeric($piece2)/;
+  }
+  my $sortfunc = qq/sub { $piece1 $cmp_symbol $piece2 }/;
   my $sorter = eval($sortfunc);
   my @sortkeys = sort $sorter (($skip_rows+1)..$self->{rows});
 
@@ -958,6 +998,32 @@ sub sort {
   }
 }
 
+#-------------------------------------------------------
+# Subroutine:   _stripHTML (html_string)
+# Author:       David Link
+# Date:         12 Feb 2003
+#-------------------------------------------------------
+sub _stripHTML {
+    $_ = $_[0]; 
+    s/ \< [^>]* \> //gx;
+    s/\&nbsp;/ /g;
+    return $_;  	
+}	
+
+#-------------------------------------------------------
+# Subroutine:   _stripNonNumeric (string)
+# Author:       David Link
+# Date:         04 Apr 2003
+# Description:  Remove all non-numeric char from a string
+#                 For efficiency does not deal with:
+#                 1. nested '-' chars.,  2. multiple '.' chars.
+#-------------------------------------------------------
+sub _stripNonNumeric {
+    $_ = $_[0]; 
+    s/[^0-9.+-]//g;
+    return 0 if !$_;
+    return $_;
+}
 
 #-------------------------------------------------------
 # Cell config methods

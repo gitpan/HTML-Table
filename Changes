@@ -1,5 +1,9 @@
 Revision history for Perl extension HTML::Table.
 
+1.18  6 May 2003
+    - Improved sort method.
+   	  Thanks to David Link <dvlink@yahoo.com> for this addition
+   	  
 1.17  2 September 2002
 	- Added the 'head' parameter to the new method.
 	  Thanks to Tommi Maekitalo <t.maekitalo@epgmbh.de> for this addition

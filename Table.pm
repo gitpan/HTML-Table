@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.05';
+$VERSION = '1.06';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -18,9 +18,21 @@ HTML::Table - produces HTML tables
   use HTML::Table;
 
   $table1 = new HTML::Table($rows, $cols);
+    or
+  $table1 = new HTML::Table(-rows=>26,
+                            -cols=>2,
+                            -border=>1,
+                            -bgcolor=>"blue",
+                            -width=>"50\%",
+                            -spacing=>1,
+                            -padding=>1);
+
   $table1->setCell($cellrow, $cellcol, 'This is Cell 1');
   $table1->setCellBGColor('blue');
-  $table1->setCellColSpan(1,1, 2);
+  $table1->setCellColSpan(1, 1, 2);
+  $table1->setRowHead(1);
+  $table1->setColHead(1);
+
   $table1->print;
 
   $table2 = new HTML::Table;
@@ -77,6 +89,19 @@ are specified, the table will be initialized to that
 size.  Row and Column numbers start at 1,1.  0,0 is
 considered an empty table.
 
+=item new HTML::Table([-rows=>num_rows, 
+		 -cols=>num_cols, 
+		 -border=>border_width, 
+		 -bgcolor=>back_colour, 
+		 -width=>table_width, 
+		 -spacing=>cell_spacing, 
+		 -padding=>cell_padding])
+
+Creates a new HTML table object.  If rows and columns
+are specified, the table will be initialized to that
+size.  Row and Column numbers start at 1,1.  0,0 is
+considered and empty table.
+
 =back
 
 =head2 Table Level Methods
@@ -85,11 +110,11 @@ considered an empty table.
 
 =item setBorder([pixels])
 
-Sets the table Border Width -- <BORDER> tag
+Sets the table Border Width
 
 =item setWidth([pixels|percentofscreen])
 
-Sets the table width -- <WIDTH> tag
+Sets the table width
 Remember to escape percent symbol if used
 
 =item setCellSpacing([pixels])
@@ -100,20 +125,26 @@ Remember to escape percent symbol if used
 
 =item setBGColor([colorname|colortriplet])
 
+=item autoGrow([1|true|on|anything|0|false|off|no|disable])
+
+Switches on (default) or off automatic growing of the table
+if row or column values passed to setCell exceed current
+table size.
+
 =back
 
 =head2 Row/Column Level Methods
 
 =over 4
 
-=item addRow("cell 1 content" [, "cell 2 conent",  ...])
+=item addRow("cell 1 content" [, "cell 2 content",  ...])
 
 Adds a row to the bottom of the table.  Assumes if you
 pass more values than there are columns that you want
 to increase the number of columns.
 
 
-=item addCol("cell 1 content" [, "cell 2 conent",  ...])
+=item addCol("cell 1 content" [, "cell 2 content",  ...])
 
 Adds a column to the right end of the table.  Assumes if
 you pass more values than there are rows that you want
@@ -128,9 +159,15 @@ to increase the number of rows.
 
 =item setRowVAlign(row_num, [CENTER|TOP|BOTTOM])
 
+=item setRowHead(row_num)
+
+=item setColHead(row_num)
+
 =item setColNoWrap(col_num, [0|1])
 
 =item setRowBGColor(row_num, [colorname|colortriplet])
+
+=item setColBGColor(row_num, [colorname|colortriplet])
 
 =back
 
@@ -141,7 +178,9 @@ to increase the number of rows.
 =item setCell(row_num, col_num, "content")
 
 Sets the content of a table cell.  This could be any
-string, even another table object via the getTable method
+string, even another table object via the getTable method.
+If the row and/or column numbers are outside the existing table
+boundaries extra rows and/or columns are created automatically.
 
 =item setCellAlign(row_num, col_num, [CENTER|RIGHT|LEFT])
 
@@ -151,21 +190,23 @@ string, even another table object via the getTable method
 
 =item setCellHeight(row_num, col_num, [pixels])
 
-=item setCellNoWrap(row_num, col_num, [0|1])
+=item setCellHead(row_num, col_num)
 
+=item setCellNoWrap(row_num, col_num, [0|1])
+ 
 =item setCellBGColor(row_num, col_num, [colorname|colortriplet])
 
 =item setCellRowSpan(row_num, col_num, num_cells)
 
-Causes the cell to overlap a number of cells to the right.
-If the overlap number is greater than number of cells to
-the right of the cell, a false value will be returned.
-
-=item setCellColSpan(row_num, col_num, num_cells)
-
 Causes the cell to overlap a number of cells below it.
 If the overlap number is greater than number of cells 
 below the cell, a false value will be returned.
+
+=item setCellColSpan(row_num, col_num, num_cells)
+
+Causes the cell to overlap a number of cells to the right.
+If the overlap number is greater than number of cells to
+the right of the cell, a false value will be returned.
 
 =item setCellSpan(upleft_row_num, up_left_col_num,
         lowright_row_num, lowrigt_col_num)
@@ -219,7 +260,7 @@ Prints HTML representation of the table to STDOUT
 This module was originally created in 1997 by Stacy Lacy and whose last 
 version was uploaded to CPAN in 1998.  The module was adopted in July 2000 
 by Anthony Peacock in order to distribute a revised version.  This adoption 
-took place without Stacy Lacy's explicit consent as it proved impossible 
+took place without the explicit consent of Stacy Lacy as it proved impossible 
 to contact them at the time.  Although explicit consent was not obtained at 
 the time, there was some evidence that Stacy Lacy was looking for somebody 
 to adopt the module in 1998.
@@ -229,9 +270,17 @@ to adopt the module in 1998.
 Anthony Peacock, a.peacock@chime.ucl.ac.uk
 Stacy Lacy (Original author)
 
+=head1 CONTRIBUTIONS
+
+Jay Flaherty, fty@mediapulse.com
+For ROW, COL & CELL HEAD methods. Modified the new method to allow hash of values.
+
+John Stumbles, john@uk.stumbles.org
+For autogrow behaviour of setCell, and allowing alignment specifications to be case insensitive
+
 =head1 COPYRIGHT
 
-Copyright (c) 1998-2000 Anthony Peacock, CHIME.
+Copyright (c) 1998-2001 Anthony Peacock, CHIME.
 Copyright (c) 1997 Stacy Lacy
 
 This library is free software; you can redistribute it and/or
@@ -276,9 +325,18 @@ perl(1), CGI(3)
 
 
 #-------------------------------------------------------
-# Subroutine:  	new([num_rows, num_cols]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Subroutine:  	new([num_rows, num_cols])
+#            or new([-rows=>num_rows,
+#                   -cols=>num_cols,
+#                   -border=>border_width,
+#                   -bgcolor=>back_colour,
+#                   -width=>table_width,
+#                   -spacing=>cell_spacing,
+#                   -padding=>cell_padding]); 
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
+# Modified:     30 Mar 1998 - Jay Flaherty
+# Modified:     13 Feb 2001 - Anthony Peacock
 #-------------------------------------------------------
 sub new {
 
@@ -288,12 +346,29 @@ my $class = ref($type) || $type;
 my $self ={};
 bless( $self, $class); 
 
-# If number of rows and cols specified, let's set
-$self->{rows} = shift || 0;
-$self->{cols} = shift || 0;
+# If paramter list is a hash (of the form -param=>value, ...)
+if ($_[0] =~ /^-/) {
+    my %flags = @_;
+    $self->{rows} = $flags{-row} || 0;
+    $self->{cols} = $flags{-col} || 0;
+    $self->{border} = $flags{-border} || undef;
+    $self->{bgcolor} = $flags{-bgcolor} || undef;
+    $self->{background} = $flags{-background} || undef;
+    $self->{width} = $flags{-width} || undef;
+    $self->{cellspacing} = $flags{-spacing} || undef;
+    $self->{cellpadding} = $flags{-padding} || undef;
+}
+else # user supplied row and col (or default to 0,0)
+{
+    $self->{rows} = shift || 0;
+    $self->{cols} = shift || 0;
+}
 
 # let's initialize our empty table
 $self->{table} = {};
+
+# Table Auto-Grow mode (default on)
+$self->{autogrow} = 1;
 
 # Cell alignment is tracked in two mirror tables
 $self->{"table:align"} = {};
@@ -312,63 +387,70 @@ $self->{"table:cellbgcolor"} = {};
 # Cell Row and Column Spanning masks
 $self->{"table:cellrowspan"} = {};
 $self->{"table:cellcolspan"} = {};
+$self->{"table:cellspan"} = {};
+
+# Cell Row header mask
+$self->{"table:cellhead"} = {};
 
 return $self;
 }	
 
 #-------------------------------------------------------
 # Subroutine:  	setBorder([pixels]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
-# Modified:       12/07/2000 A Peacock (To allow zero values)
-# Description: 
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
+# Modified:     12 Jul 2000 - Anthony Peacock (To allow zero values)
 #-------------------------------------------------------
 sub setBorder {
     my $self = shift;
     $self->{border} = shift;
     $self->{border} = 1 unless ( &_is_integer($self->{border}) ) ;
 }
+
 #-------------------------------------------------------
 # Subroutine:  	setBGColor([colorname|colortriplet]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub setBGColor {
    my $self = shift;
    $self->{bgcolor} = shift || undef;
 }
+
 #-------------------------------------------------------
 # Subroutine:  	setWidth([pixels|percentofscreen]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub setWidth {
    my $self = shift;
    my $value = shift;
    
    if ( $value !~ /^\s*\d+%?/ ) {
-      print STDERR "$0:setWidth:Invalid value $value";
+      print STDERR "$0:setWidth:Invalid value $value\n";
       return 0;
    } else {
       $self->{width} = $value;
    }    
 }
+
 #-------------------------------------------------------
 # Subroutine:  	setCellSpacing([pixels]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
-# Modified:       12/07/2000 A Peacock (To allow zero values)
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
+# Modified:     12 Jul 2000 - Anthony Peacock (To allow zero values)
 #-------------------------------------------------------
 sub setCellSpacing {
     my $self = shift;
     $self->{cellspacing} = shift;
     $self->{border} = 1 unless ( &_is_integer($self->{border}) ) ;
 }
+
 #-------------------------------------------------------
 # Subroutine:  	setCellPadding([pixels]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
-# Modified:       12/07/2000 A Peacock (To allow zero values)
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
+# Modified:     12 Jul 2000 - Anthony Peacock (To allow zero values)
 #-------------------------------------------------------
 sub setCellPadding {
     my $self = shift;
@@ -377,28 +459,38 @@ sub setCellPadding {
 }
 
 #-------------------------------------------------------
-# Subroutine:  	setCaption("CaptionText") 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Subroutine:  	setCaption("CaptionText" [, "TOP|BOTTOM]) 
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub setCaption {
    my $self = shift;
    $self->{caption} = shift ;
-   my $align = shift;
-   if ($align && ! (($align eq "TOP") || ($align eq "BOTTOM")) ) {
-      $align = "TOP"; # default
-      print STDERR "$0:setCaption:Invalid Alignment";
-      return 0;
-   } else {
+   my $align = uc(shift);
+   if (defined $align && (($align eq "TOP") || ($align eq "BOTTOM")) ) {
       $self->{caption_align} = $align;
+   } else {
+      print STDERR "$0:setCaption:Invalid Alignment\n";
+      return 0;
    }
 }
 
+#-------------------------------------------------------
+# Subroutine:  	autoGrow([1|on|true|1|off|false]) 
+# Author:       John Stumbles
+# Date:		08 Feb 2001
+# Description:  switches on (default) or off auto-grow mode
+#-------------------------------------------------------
+sub autoGrow {
+    my $self = shift;
+    $self->{autogrow} = (shift or 1) ;
+    $self->{autogrow} = 0 if $self->{autogrow} =~ /^(?:0|no|off|false|disable)$/i ;
+}
 
 #-------------------------------------------------------
-# Subroutine:  	addRow("cell 1 content" [, "cell 2 conent",  ...]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Subroutine:  	addRow("cell 1 content" [, "cell 2 content",  ...]) 
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub addRow {
    my $self = shift;
@@ -419,9 +511,9 @@ sub addRow {
 }
 
 #-------------------------------------------------------
-# Subroutine:  	addCol("cell 1 content" [, "cell 2 conent",  ...]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Subroutine:  	addCol("cell 1 content" [, "cell 2 content",  ...]) 
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub addCol {
    my $self = shift;
@@ -443,21 +535,36 @@ sub addCol {
 
 #-------------------------------------------------------
 # Subroutine:  	setCell(row_num, col_num, "content") 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
+# Modified:     08 Feb 2001 - John Stumbles to allow auto-growing of table
 #-------------------------------------------------------
 sub setCell {
    my $self = shift;
    (my $row = shift) || return 0;
    (my $col = shift) || return 0;
 
-   if (($row > $self->{rows}) || ($row < 1) ) {
-      print STDERR "$0:setCell:Invalid table reference $row:$col";
+   if ($row < 1) {
+      print STDERR "$0:setCell:Invalid table row reference $row:$col\n";
       return 0;
    }
-   if (($col > $self->{cols}) || ($col < 1) ) {
-      print STDERR "$0:setCell:Invalid table reference $row:$col";
+   if ($col < 1) {
+      print STDERR "$0:setCell:Invalid table column reference $row:$col\n";
       return 0;
+   }
+   if ($row > $self->{rows}) {
+      if ($self->{autogrow}) {
+        $self->{rows} = $row ;
+      } else {
+        print STDERR "$0:setCell:Invalid table row reference $row:$col\n";
+      }
+   }
+   if ($col > $self->{cols}) {
+      if ($self->{autogrow}) {
+        $self->{cols} = $col ;
+      } else {
+        print STDERR "$0:setCell:Invalid table column reference $row:$col\n";
+      }
    }
    $self->{table}{"$row:$col"} = shift;
    return ($row, $col);
@@ -466,8 +573,8 @@ sub setCell {
 
 #-------------------------------------------------------
 # Subroutine:  	getCell(row_num, col_num) 
-# Author:         Addition by A Peacock	
-# Date:		      27 July 1998
+# Author:       Anthony Peacock	
+# Date:		27 Jul 1998
 #-------------------------------------------------------
 sub getCell {
    my $self = shift;
@@ -475,11 +582,11 @@ sub getCell {
    (my $col = shift) || return 0;
 
    if (($row > $self->{rows}) || ($row < 1) ) {
-      print STDERR "$0:getCell:Invalid table reference $row:$col";
+      print STDERR "$0:getCell:Invalid table reference $row:$col\n";
       return 0;
    }
    if (($col > $self->{cols}) || ($col < 1) ) {
-      print STDERR "$0:getCell:Invalid table reference $row:$col";
+      print STDERR "$0:getCell:Invalid table reference $row:$col\n";
       return 0;
    }
 
@@ -490,8 +597,10 @@ sub getCell {
 
 #-------------------------------------------------------
 # Subroutine:  	getTable 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 July 1997
+# Modified:     19 Mar 1998 - Jay Flaherty
+# Modified:     13 Feb 2001 - Anthony Peacock
 #-------------------------------------------------------
 sub getTable {
    my $self = shift;
@@ -507,11 +616,12 @@ sub getTable {
    $html .=" CELLPADDING=$self->{cellpadding}" if defined $self->{cellpadding};
    $html .=" WIDTH=$self->{width}" if defined $self->{width};
    $html .=" BGCOLOR=$self->{bgcolor}" if defined $self->{bgcolor};
+   $html .=" BACKGROUND=$self->{background}" if defined $self->{background};
    $html .=">\n";
    if (defined $self->{caption}) {
       $html .="<CAPTION";
       $html .=" ALIGN=$self->{caption_align}" if (defined $self->{caption_align});
-      $html .=">$self->{caption}</CAPTION>\n" if (defined $self->{caption});
+      $html .=">$self->{caption}</CAPTION>\n";
    }
 
    my ($i, $j);
@@ -525,18 +635,22 @@ sub getTable {
              next
           }
           
+          # print cell
+          # if head flag is set print <TH> tag else <TD>
+          if (defined $self->{"table:cellhead"}{"$i:$j"}) {
+            $html .="<TH";
+          } else { 
+            $html .="<TD";
+          }
 
-          #print cell
-          $html .="<TD";
-          
-          # if alignment options are set, add them in the TD
+          # if alignment options are set, add them in the cell tag
           $html .=" ALIGN=" . $self->{"table:align"}{"$i:$j"}
                 if defined $self->{"table:align"}{"$i:$j"};
           
           $html .=" VALIGN=" . $self->{"table:valign"}{"$i:$j"}
                 if defined $self->{"table:valign"}{"$i:$j"};
           
-          # Apply custom height and width
+          # Apply custom height and width to the cell tag
           $html .=" WIDTH=" . $self->{"table:cellwidth"}{"$i:$j"}
                 if defined $self->{"table:cellwidth"}{"$i:$j"};
           $html .=" HEIGHT=" . $self->{"table:cellheight"}{"$i:$j"}
@@ -545,12 +659,11 @@ sub getTable {
           # apply background color if set
           $html .=" BGCOLOR=" . $self->{"table:cellbgcolor"}{"$i:$j"}
                 if defined $self->{"table:cellbgcolor"}{"$i:$j"};
-                   
 
-          # if NOWRAP mask is set, put it in the TD
+          # if NOWRAP mask is set, put it in the cell tag
           $html .=" NOWRAP" if defined $self->{"table:nowrap"}{"$i:$j"};
           
-          # if column/row spanning is set, put it in the TD
+          # if column/row spanning is set, put it in the cell tag
           # also increment to skip spanned rows/cols.
           if (defined $self->{"table:cellcolspan"}{"$i:$j"}) {
             $html .=" COLSPAN=" . $self->{"table:cellcolspan"}{"$i:$j"};
@@ -559,9 +672,14 @@ sub getTable {
             $html .=" ROWSPAN=" . $self->{"table:cellrowspan"}{"$i:$j"};
           }
           
-          #Finish up Cell by ending <TD>, putting content and </TD>
-          $html .=">". ($self->{table}{"$i:$j"} || '') ."</TD>";
-
+          # Finish up Cell by ending cell start tag, putting content and cell end tag
+          $html .=">". ($self->{table}{"$i:$j"} || '');
+          # if head flag is set print </TH> tag else </TD>
+          if (defined $self->{"table:cellhead"}{"$i:$j"}) {
+            $html .= "</TH>";
+          } else {
+            $html .= "</TD>";
+          }
       }
       $html .="</TR>\n";
    }
@@ -573,32 +691,34 @@ sub getTable {
 
 #-------------------------------------------------------
 # Subroutine:  	print
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub print {
    my $self = shift;
    print $self->getTable;
 }
 
-
 #-------------------------------------------------------
 # Subroutine:  	setCellAlign(row_num, col_num, [CENTER|RIGHT|LEFT]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
+# Modified:     13 Feb 2001 - Anthony Peacock for case insensitive
+#                             alignment parameters
+#                             (suggested by John Stumbles)
 #-------------------------------------------------------
 sub setCellAlign {
    my $self = shift;
    (my $row = shift) || return 0;
    (my $col = shift) || return 0;
-   (my $align = shift);
+   my $align = uc(shift);
 
    if (($row > $self->{rows}) || ($row < 1) ) {
-      print STDERR "$0:setCellAlign:Invalid table reference";
+      print STDERR "$0:setCellAlign:Invalid table reference\n";
       return 0;
    }
    if (($col > $self->{cols}) || ($col < 1) ) {
-      print STDERR "$0:setCellAlign:Invalid table reference";
+      print STDERR "$0:setCellAlign:Invalid table reference\n";
       return 0;
    }
 
@@ -610,7 +730,7 @@ sub setCellAlign {
 
    if (! (($align eq "CENTER") || ($align eq "RIGHT") || 
           ($align eq "LEFT"))) {
-      print STDERR "$0:setCellAlign:Invalid alignment type";
+      print STDERR "$0:setCellAlign:Invalid alignment type\n";
       return 0;
    }
 
@@ -619,23 +739,27 @@ sub setCellAlign {
    return ($row, $col);
 
 }
+
 #-------------------------------------------------------
 # Subroutine:  	setCellVAlign(row_num, col_num, [CENTER|TOP|BOTTOM]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
+# Modified:     13 Feb 2001 - Anthony Peacock for case insensitive
+#                             alignment parameters
+#                             (suggested by John Stumbles)
 #-------------------------------------------------------
 sub setCellVAlign {
    my $self = shift;
    (my $row = shift) || return 0;
    (my $col = shift) || return 0;
-   (my $valign = shift);
+   my $valign = uc(shift);
 
    if (($row > $self->{rows}) || ($row < 1) ) {
-      print STDERR "$0:setCellVAlign:Invalid table reference";
+      print STDERR "$0:setCellVAlign:Invalid table reference\n";
       return 0;
    }
    if (($col > $self->{cols}) || ($col < 1) ) {
-      print STDERR "$0:setCellVAlign:Invalid table reference";
+      print STDERR "$0:setCellVAlign:Invalid table reference\n";
       return 0;
    }
 
@@ -647,7 +771,7 @@ sub setCellVAlign {
 
    if (! (($valign eq "CENTER") || ($valign eq "TOP") || 
           ($valign eq "BOTTOM"))) {
-      print STDERR "$0:setCellVAlign:Invalid alignment type";
+      print STDERR "$0:setCellVAlign:Invalid alignment type\n";
       return 0;
    }
 
@@ -659,8 +783,8 @@ sub setCellVAlign {
 
 #-------------------------------------------------------
 # Subroutine:  	setRowAlign(row_num, [CENTER|RIGHT|LEFT]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub setRowAlign {
    my $self = shift;
@@ -673,10 +797,11 @@ sub setRowAlign {
    }
 
 }
+
 #-------------------------------------------------------
 # Subroutine:  	setRowVAlign(row_num, [CENTER|TOP|BOTTOM]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub setRowVAlign {
    my $self = shift;
@@ -689,10 +814,11 @@ sub setRowVAlign {
    }
 
 }
+
 #-------------------------------------------------------
 # Subroutine:  	setColAlign(row_num, col_num, [CENTER|RIGHT|LEFT]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub setColAlign {
    my $self = shift;
@@ -708,9 +834,8 @@ sub setColAlign {
 
 #-------------------------------------------------------
 # Subroutine:  	setColVAlign(col_num, [CENTER|TOP|BOTTOM])
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
-# Description: 
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub setColVAlign {
    my $self = shift;
@@ -723,10 +848,72 @@ sub setColVAlign {
    }
 
 }
+
+#-------------------------------------------------------
+# Subroutine:  	setCellHead(row_num, col_num, [0|1]) 
+# Author:       Jay Flaherty
+# Date:		19 Mar 1998
+#-------------------------------------------------------
+sub setCellHead{
+   my $self = shift;
+   (my $row = shift) || return 0;
+   (my $col = shift) || return 0;
+   my $value = shift || 1;
+
+   if (($row > $self->{rows}) || ($row < 1) ) {
+      print STDERR "$0:setCellHead:Invalid table reference\n";
+      return 0;
+   }
+   if (($col > $self->{cols}) || ($col < 1) ) {
+      print STDERR "$0:setCellHead:Invalid table reference\n";
+      return 0;
+   }
+
+   $self->{"table:cellhead"}{"$row:$col"} = $value;
+   return ($row, $col);
+
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setColHead(col_num, [0|1]) 
+# Author:       Jay Flaherty
+# Date:		30 Mar 1998
+#-------------------------------------------------------
+sub setColHead {
+   my $self = shift;
+   (my $col = shift) || return 0;
+   my $value = shift || 1;
+
+   # this sub should set the head attribute of a col given a col number;
+   my $i;
+   for ($i=1;$i <= $self->{rows};$i++) {
+      $self->setCellHead($i,$col, $value);
+   }
+
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setRowHead(row_num, [0|1]) 
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
+#-------------------------------------------------------
+sub setRowHead {
+   my $self = shift;
+   (my $row = shift) || return 0;
+   my $value = shift || 1;
+
+   # this sub should change the head flag of a row;
+   my $i;
+   for ($i=1;$i <= $self->{cols};$i++) {
+      $self->setCellHead($row,$i, $value);
+   }
+
+}
+
 #-------------------------------------------------------
 # Subroutine:  	setCellNoWrap(row_num, col_num, [0|1]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub setCellNoWrap {
    my $self = shift;
@@ -735,11 +922,11 @@ sub setCellNoWrap {
    (my $value = shift);
 
    if (($row > $self->{rows}) || ($row < 1) ) {
-      print STDERR "$0:setCellNoWrap:Invalid table reference";
+      print STDERR "$0:setCellNoWrap:Invalid table reference\n";
       return 0;
    }
    if (($col > $self->{cols}) || ($col < 1) ) {
-      print STDERR "$0:setCellNoWrap:Invalid table reference";
+      print STDERR "$0:setCellNoWrap:Invalid table reference\n";
       return 0;
    }
 
@@ -748,10 +935,11 @@ sub setCellNoWrap {
    return ($row, $col);
 
 }
+
 #-------------------------------------------------------
 # Subroutine:  	setColNoWrap(row_num, col_num, [0|1]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub setColNoWrap {
    my $self = shift;
@@ -767,8 +955,8 @@ sub setColNoWrap {
 
 #-------------------------------------------------------
 # Subroutine:  	setCellWidth(row_num, col_num, [pixels|percentoftable]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub setCellWidth {
    my $self = shift;
@@ -777,11 +965,11 @@ sub setCellWidth {
    (my $value = shift);
 
    if (($row > $self->{rows}) || ($row < 1) ) {
-      print STDERR "$0:setCellWidth:Invalid table reference";
+      print STDERR "$0:setCellWidth:Invalid table reference\n";
       return 0;
    }
    if (($col > $self->{cols}) || ($col < 1) ) {
-      print STDERR "$0:setCellWidth:Invalid table reference";
+      print STDERR "$0:setCellWidth:Invalid table reference\n";
       return 0;
    }
 
@@ -792,17 +980,18 @@ sub setCellWidth {
    }
 
    if ( $value !~ /^\s*\d+%?/ ) {
-      print STDERR "$0:setCellWidth:Invalid value $value";
+      print STDERR "$0:setCellWidth:Invalid value $value\n";
       return 0;
    } else {
       $self->{"table:cellwidth"}{"$row:$col"} = $value;
       return ($row, $col);
    }
 }
+
 #-------------------------------------------------------
 # Subroutine:  	setCellHeight(row_num, col_num, [pixels]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub setCellHeight {
    my $self = shift;
@@ -811,11 +1000,11 @@ sub setCellHeight {
    (my $value = shift);
 
    if (($row > $self->{rows}) || ($row < 1) ) {
-      print STDERR "$0:setCellHeight:Invalid table reference";
+      print STDERR "$0:setCellHeight:Invalid table reference\n";
       return 0;
    }
    if (($col > $self->{cols}) || ($col < 1) ) {
-      print STDERR "$0:setCellHeight:Invalid table reference";
+      print STDERR "$0:setCellHeight:Invalid table reference\n";
       return 0;
    }
 
@@ -826,7 +1015,7 @@ sub setCellHeight {
    }
 
    if (! ($value > 0)) {
-      print STDERR "$0:setCellHeight:Invalid value $value";
+      print STDERR "$0:setCellHeight:Invalid value $value\n";
       return 0;
    } else {
       $self->{"table:cellheight"}{"$row:$col"} = $value;
@@ -836,8 +1025,8 @@ sub setCellHeight {
 
 #-------------------------------------------------------
 # Subroutine:  	setCellBGColor(row_num, col_num, [colorname|colortrip]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub setCellBGColor {
    my $self = shift;
@@ -846,11 +1035,11 @@ sub setCellBGColor {
    (my $value = shift);
 
    if (($row > $self->{rows}) || ($row < 1) ) {
-      print STDERR "$0:setCellBGColor:Invalid table reference";
+      print STDERR "$0:setCellBGColor:Invalid table reference\n";
       return 0;
    }
    if (($col > $self->{cols}) || ($col < 1) ) {
-      print STDERR "$0:setCellBGColor:Invalid table reference";
+      print STDERR "$0:setCellBGColor:Invalid table reference\n";
       return 0;
    }
 
@@ -865,10 +1054,11 @@ sub setCellBGColor {
    return ($row, $col);
 
 }
+
 #-------------------------------------------------------
 # Subroutine:  	setRowBGColor(row_num, [colorname|colortriplet]) 
-# Author:         Stacy Lacy	
-# Date:		      07/30/1997
+# Author:       Stacy Lacy	
+# Date:		30 Jul 1997
 #-------------------------------------------------------
 sub setRowBGColor {
    my $self = shift;
@@ -882,10 +1072,30 @@ sub setRowBGColor {
    }
 
 }
+
+#-------------------------------------------------------
+# Subroutine:  	setColBGColor(col_num, [colorname|colortriplet]) 
+# Author:       Jay Flaherty
+# Date:		16 Nov 1998
+#-------------------------------------------------------
+sub setColBGColor{
+   my $self = shift;
+   (my $col = shift) || return 0;
+   my $value = shift || 1;
+
+   # this sub should set bgcolor for each
+   # cell in a col given a col number;
+   my $i;
+   for ($i=1;$i <= $self->{rows};$i++) {
+      $self->setCellBGColor($i,$col, $value);
+   }
+
+}
+
 #-------------------------------------------------------
 # Subroutine:  	setCellRowSpan(row_num, col_num, num_cells)
-# Author:         Stacy Lacy	
-# Date:		      07/31/1997
+# Author:       Stacy Lacy	
+# Date:		31 Jul 1997
 #-------------------------------------------------------
 sub setCellRowSpan {
    my $self = shift;
@@ -894,11 +1104,11 @@ sub setCellRowSpan {
    (my $value = shift);
 
    if (($row > $self->{rows}) || ($row < 1) ) {
-      print STDERR "$0:setCellRowSpan:Invalid table reference";
+      print STDERR "$0:setCellRowSpan:Invalid table reference\n";
       return 0;
    }
    if (($col > $self->{cols}) || ($col < 1) ) {
-      print STDERR "$0:setCellRowSpan:Invalid table reference";
+      print STDERR "$0:setCellRowSpan:Invalid table reference\n";
       return 0;
    }
 
@@ -914,10 +1124,11 @@ sub setCellRowSpan {
    return ($row, $col);
 
 }
+
 #-------------------------------------------------------
 # Subroutine:  	setCellColSpan(row_num, col_num, num_cells)
-# Author:         Stacy Lacy	
-# Date:		      07/31/1997
+# Author:       Stacy Lacy	
+# Date:		31 Jul 1997
 #-------------------------------------------------------
 sub setCellColSpan {
    my $self = shift;
@@ -926,11 +1137,11 @@ sub setCellColSpan {
    (my $value = shift);
 
    if (($row > $self->{rows}) || ($row < 1) ) {
-      print STDERR "$0:setCellColSpan:Invalid table reference";
+      print STDERR "$0:setCellColSpan:Invalid table reference\n";
       return 0;
    }
    if (($col > $self->{cols}) || ($col < 1) ) {
-      print STDERR "$0:setCellColSpan:Invalid table reference";
+      print STDERR "$0:setCellColSpan:Invalid table reference\n";
       return 0;
    }
 
@@ -946,10 +1157,21 @@ sub setCellColSpan {
    return ($row, $col);
 
 }
+
+#-------------------------------------------------------
+#*******************************************************
+#
+# End of public methods
+# 
+# The following methods are internal to this package
+#
+#*******************************************************
+#-------------------------------------------------------
+
 #-------------------------------------------------------
 # Subroutine:  	_updateSpanGrid(row_num, col_num)
-# Author:         Stacy Lacy	
-# Date:		      07/31/1997
+# Author:       Stacy Lacy	
+# Date:		31 Jul 1997
 #-------------------------------------------------------
 sub _updateSpanGrid {
    my $self = shift;
@@ -982,8 +1204,8 @@ sub _updateSpanGrid {
 
 #-------------------------------------------------------
 # Subroutine:  	_getTableHashValues(tablehashname)
-# Author:         Stacy Lacy	
-# Date:		      07/31/1997
+# Author:       Stacy Lacy	
+# Date:		31 Jul 1997
 #-------------------------------------------------------
 sub _getTableHashValues {
    my $self = shift;
@@ -1002,8 +1224,8 @@ sub _getTableHashValues {
 
 #-------------------------------------------------------
 # Subroutine:  	_is_integer(string_value)
-# Author:         Anthony Peacock	
-# Date:		      12/07/2000
+# Author:       Anthony Peacock	
+# Date:		12 Jul 2000
 # Description:	Checks the string value passed as a parameter
 #               and returns true if it is an integer
 #-------------------------------------------------------

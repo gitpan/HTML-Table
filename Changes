@@ -1,34 +1,66 @@
 Revision history for Perl extension HTML::Table.
 
+1.06  13 February 2001
+	- Some general tidying up of both the documentation and code
+
+	- Method setCell will now automatically increase the table size if the 
+	  row/col parameters are larger than the current table size 
+	  (this can be turned off using the autoGrow method)
+	  **** NB This new behaviour may break existing code  ****
+	  Thanks to John Stumbles <john@uk.stumbles.org> for this modification.
+
+	- New method autoGrow used to control the behaviour of the setCell method
+	  Thanks to John Stumbles <john@uk.stumbles.org> for this modification.
+
+	- Error checking for parameters is now case-independent
+	  Thanks to John Stumbles <john@uk.stumbles.org> for this suggestion.
+
+	- All error messages now end in a newline (\n)
+	  Thanks to John Stumbles <john@uk.stumbles.org> for this modification.
+
+	- New method setColBGColor
+	  Thanks to Jay Flaherty <fty@mediapulse.com> for this modification.
+
+	- New methods setCellHead, setColHead
+	  Thanks to Jay Flaherty <fty@mediapulse.com> for this modification.
+
+	- The new method can now take a hash of parameters (see the documentation)
+	  Thanks to Jay Flaherty <fty@mediapulse.com> for this modification.
+
+1.05a 8 February 2001
+	- Small corection to the documentation.  
+	  Thanks to John Stumbles <j.d.stumbles@reading.ac.uk> for pointing this out.
+
 1.05  6 February 2001
 	- Fix to prevent warnings if cell content is undefined.  
 	  Thanks to Boris Zentner <boris@m2b.de> for this suggestion.
+
 	- Fix to allow cell widths to be defined using percentage values.
 	  Thanks to Boris Zentner <boris@m2b.de> for this suggestion.
 	  
 1.04a 4 December 2000
-    - Changed documentation, added reference to Japanese translation.
+	- Changed documentation, added reference to Japanese translation.
 
 1.04  17 August 2000
-    - Minor change to remove 'uninitialized variable' warning when working with -w
+	- Minor change to remove 'uninitialized variable' warning when working with -w
 
 1.03  13 July 2000
 	- Overloaded the "" string interpolation operator onto the getTable method.
-      This alows the use of the object reference 'in-line' in strings.
-      Thanks to "B. K. Oxley" <binkley@bigfoot.com> for this suggestion.
+	  This alows the use of the object reference 'in-line' in strings.
+	  Thanks to "B. K. Oxley" <binkley@bigfoot.com> for this suggestion.
 
 1.02  12 July 2000
-    - Changed setBorder, setCellPadding, setCellSpacing code to allow the attribute
-      to take zero (0) values.
+	- Changed setBorder, setCellPadding, setCellSpacing code to allow the attribute
+	  to take zero (0) values.
 
 1.01  7th July 2000
-    - Minor changes to the documentation section of Table.pm
+	- Minor changes to the documentation section of Table.pm
 
 1.00  5th July 2000
 	- New maintainer, Anthony Peacock (a.peacock@chime.ucl.ac.uk)
 
 	- Added method - getCell(row_num, col_num) - to return the contents of 
-		the specified cell as a string. (a.peacock@chime.ucl.ac.uk)
+	  the specified cell as a string. (a.peacock@chime.ucl.ac.uk)
 
 0.90  27th January 1998
 	- original version created by Stacy Lacy

@@ -1,5 +1,8 @@
 Revision history for Perl extension HTML::Table.
 
+1.04a 4 December 2000
+    - Changed documentation, added reference to Japanese translation.
+
 1.04  17 August 2000
     - Minor change to remove 'uninitialized variable' warning when working with -w
 

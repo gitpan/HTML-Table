@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.04';
+$VERSION = '1.04a';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -55,6 +55,11 @@ than will fit in the current table grid.
 
 Methods are provided for nearly all valid table, row, and
 cell tags specified for HTML 3.0.
+
+A Japanese translation of the documentation is available at:
+
+	http://member.nifty.ne.jp/hippo2000/perltips/html/table.htm
+
 
 =head1 METHODS
 
@@ -470,6 +475,7 @@ sub getCell {
       print STDERR "$0:getCell:Invalid table reference $row:$col";
       return 0;
    }
+
    return $self->{table}{"$row:$col"} ;
 
 }

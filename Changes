@@ -1,5 +1,9 @@
 Revision history for Perl extension HTML::Table.
 
+1.02  12 July 2000
+    - Changed setBorder, setCellPadding, setCellSpacing code to allow the attribute
+      to take zero (0) values.
+
 1.01  7th July 2000
     - Minor changes to the documentation section of Table.pm
 

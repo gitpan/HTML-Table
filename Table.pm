@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.01';
+$VERSION = '1.02';
 
 =head1 NAME
 
@@ -294,11 +294,13 @@ return $self;
 # Subroutine:  	setBorder([pixels]) 
 # Author:         Stacy Lacy	
 # Date:		      07/30/1997
+# Modified:       12/07/2000 A Peacock (To allow zero values)
 # Description: 
 #-------------------------------------------------------
 sub setBorder {
-   my $self = shift;
-   $self->{border} = shift || 1;
+    my $self = shift;
+    $self->{border} = shift;
+    $self->{border} = 1 unless ( &_is_integer($self->{border}) ) ;
 }
 #-------------------------------------------------------
 # Subroutine:  	setBGColor([colorname|colortriplet]) 
@@ -322,19 +324,23 @@ sub setWidth {
 # Subroutine:  	setCellSpacing([pixels]) 
 # Author:         Stacy Lacy	
 # Date:		      07/30/1997
+# Modified:       12/07/2000 A Peacock (To allow zero values)
 #-------------------------------------------------------
 sub setCellSpacing {
-   my $self = shift;
-   $self->{cellspacing} = shift || 1;
+    my $self = shift;
+    $self->{cellspacing} = shift;
+    $self->{border} = 1 unless ( &_is_integer($self->{border}) ) ;
 }
 #-------------------------------------------------------
 # Subroutine:  	setCellPadding([pixels]) 
 # Author:         Stacy Lacy	
 # Date:		      07/30/1997
+# Modified:       12/07/2000 A Peacock (To allow zero values)
 #-------------------------------------------------------
 sub setCellPadding {
-   my $self = shift;
-   $self->{cellpadding} = shift || 1;
+    my $self = shift;
+    $self->{cellpadding} = shift;
+    $self->{border} = 1 unless ( &_is_integer($self->{border}) ) ;
 }
 
 #-------------------------------------------------------
@@ -462,16 +468,16 @@ sub getTable {
       return 0;  # no rows or no cols
    }
    $html .="<TABLE";
-   $html .=" BORDER=$self->{border}" if $self->{border};
-   $html .=" CELLSPACING=$self->{cellspacing}" if $self->{cellspacing};
-   $html .=" CELLPADDING=$self->{cellpadding}" if $self->{cellpadding};
-   $html .=" WIDTH=$self->{width}" if $self->{width};
-   $html .=" BGCOLOR=$self->{bgcolor}" if $self->{bgcolor};
+   $html .=" BORDER=$self->{border}" if defined $self->{border};
+   $html .=" CELLSPACING=$self->{cellspacing}" if defined $self->{cellspacing};
+   $html .=" CELLPADDING=$self->{cellpadding}" if defined $self->{cellpadding};
+   $html .=" WIDTH=$self->{width}" if defined $self->{width};
+   $html .=" BGCOLOR=$self->{bgcolor}" if defined $self->{bgcolor};
    $html .=">\n";
-   if ($self->{caption}) {
+   if (defined $self->{caption}) {
       $html .="<CAPTION";
-      $html .=" ALIGN=$self->{caption_align}" if ($self->{caption_align});
-      $html .=">$self->{caption}</CAPTION>\n" if ($self->{caption});
+      $html .=" ALIGN=$self->{caption_align}" if (defined $self->{caption_align});
+      $html .=">$self->{caption}</CAPTION>\n" if (defined $self->{caption});
    }
 
    my ($i, $j);
@@ -481,7 +487,7 @@ sub getTable {
       for ($j=1; $j <= ($self->{cols}); $j++) {
           
           if ($self->{"table:cellspan"}{"$i:$j"} eq "SPANNED"){
-             $html.="<! spanned cell)>";
+             $html.="<!-- spanned cell -->";
              next
           }
           
@@ -491,31 +497,31 @@ sub getTable {
           
           # if alignment options are set, add them in the TD
           $html .=" ALIGN=" . $self->{"table:align"}{"$i:$j"}
-                if $self->{"table:align"}{"$i:$j"};
+                if defined $self->{"table:align"}{"$i:$j"};
           
           $html .=" VALIGN=" . $self->{"table:valign"}{"$i:$j"}
-                if $self->{"table:valign"}{"$i:$j"};
+                if defined $self->{"table:valign"}{"$i:$j"};
           
           # Apply custom height and width
           $html .=" WIDTH=" . $self->{"table:cellwidth"}{"$i:$j"}
-                if $self->{"table:cellwidth"}{"$i:$j"};
+                if defined $self->{"table:cellwidth"}{"$i:$j"};
           $html .=" HEIGHT=" . $self->{"table:cellheight"}{"$i:$j"}
-                if $self->{"table:cellheight"}{"$i:$j"};
+                if defined $self->{"table:cellheight"}{"$i:$j"};
                     
           # apply background color if set
           $html .=" BGCOLOR=" . $self->{"table:cellbgcolor"}{"$i:$j"}
-                if $self->{"table:cellbgcolor"}{"$i:$j"};
+                if defined $self->{"table:cellbgcolor"}{"$i:$j"};
                    
 
           # if NOWRAP mask is set, put it in the TD
-          $html .=" NOWRAP" if $self->{"table:nowrap"}{"$i:$j"};
+          $html .=" NOWRAP" if defined $self->{"table:nowrap"}{"$i:$j"};
           
           # if column/row spanning is set, put it in the TD
           # also increment to skip spanned rows/cols.
-          if ($self->{"table:cellcolspan"}{"$i:$j"}) {
+          if (defined $self->{"table:cellcolspan"}{"$i:$j"}) {
             $html .=" COLSPAN=" . $self->{"table:cellcolspan"}{"$i:$j"};
           }
-          if ($self->{"table:cellrowspan"}{"$i:$j"}){
+          if (defined $self->{"table:cellrowspan"}{"$i:$j"}){
             $html .=" ROWSPAN=" . $self->{"table:cellrowspan"}{"$i:$j"};
           }
           
@@ -938,6 +944,7 @@ sub _updateSpanGrid {
       }
    }
 }
+
 #-------------------------------------------------------
 # Subroutine:  	_getTableHashValues(tablehashname)
 # Author:         Stacy Lacy	
@@ -957,6 +964,24 @@ sub _getTableHashValues {
 
    return $retval;
 }
+
+#-------------------------------------------------------
+# Subroutine:  	_is_integer(string_value)
+# Author:         Anthony Peacock	
+# Date:		      12/07/2000
+# Description:	Checks the string value passed as a parameter
+#               and returns true if it is an integer
+#-------------------------------------------------------
+sub _is_integer {
+	my $str = shift;
+
+	if ( $str =~ /^\s*\d+\s*$/ ) {
+		return 1;
+	} else {
+		return;
+	}
+}
+
 1;
 
 __END__

@@ -1,5 +1,10 @@
 Revision history for Perl extension HTML::Table.
 
+1.15  6 March 2002
+	Bug fixes
+	- Method setStyle missing although documented.
+	  Thanks to Hendrik Frenzel <hfrenzel@scunc.net> for finding this
+
 1.14  27 Feb 2002
 	Bug fixes
 	- Spurious double quote in the output after user defined table attributes

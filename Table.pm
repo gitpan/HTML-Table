@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.14';
+$VERSION = '1.15';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -546,7 +546,7 @@ sub getTable {
    if ((! $self->{rows}) || (! $self->{cols})) {
       return ;  # no rows or no cols
    }
-   $html .='<table';
+   $html .="\n<table";
    $html .=" border=\"$self->{border}\"" if defined $self->{border};
    $html .=" cellspacing=\"$self->{cellspacing}\"" if defined $self->{cellspacing};
    $html .=" cellpadding=\"$self->{cellpadding}\"" if defined $self->{cellpadding};
@@ -700,6 +700,16 @@ sub setBorder {
 sub setBGColor {
    my $self = shift;
    $self->{bgcolor} = shift || undef;
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setStyle(css style) 
+# Author:       Anthony Peacock
+# Date:		6 Mar 2002
+#-------------------------------------------------------
+sub setStyle {
+   my $self = shift;
+   $self->{style} = shift || undef;
 }
 
 #-------------------------------------------------------

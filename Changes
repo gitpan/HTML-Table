@@ -1,5 +1,19 @@
 Revision history for Perl extension HTML::Table.
 
+1.14  27 Feb 2002
+	Bug fixes
+	- Spurious double quote in the output after user defined table attributes
+	  Thanks to Benjamin Longuet <longuet@ill.fr> for fixing this
+
+	- Table align wasn't working
+	  Thanks to Benjamin Longuet <longuet@ill.fr> for fixing this
+
+	- setColHeight was actually setting the column width
+	  Thanks to Benjamin Longuet <longuet@ill.fr> for fixing this
+
+	- setColAttr was documented but didn't actually exist
+	  Thanks to Benjamin Longuet <longuet@ill.fr> for fixing this
+
 1.13  10 Jan 2002
 	- Added methods to set the style attribute of tables, rows, cols and cells
 	  Thanks to Arno Teunisse <Arno.Teunisse@Simac.nl> for this modification

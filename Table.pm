@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.13';
+$VERSION = '1.14';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -556,7 +556,7 @@ sub getTable {
    $html .=" rules=\"$self->{rules}\"" if defined $self->{rules} ;		# add rules for table
    $html .=" align=\"$self->{align}\"" if defined $self->{align} ; 		# alignment of the table
    $html .=" style=\"$self->{style}\"" if defined $self->{style} ; 		# style for the table
-   $html .=" $self->{attr}\"" if defined $self->{attr} ;		 		# user defined attribute string
+   $html .=" $self->{attr}" if defined $self->{attr} ;		 		# user defined attribute string
    $html .=">\n";
    if (defined $self->{caption}) {
       $html .="<caption";
@@ -767,7 +767,7 @@ sub setCaption {
 #-------------------------------------------------------
 sub setAlign {
    my $self = shift;
-   $self->{t_align} = shift || undef;
+   $self->{align} = shift || undef;
 }
 
 #-------------------------------------------------------
@@ -1626,7 +1626,7 @@ sub setColHeight {
    # this sub should change the cell height of a col;
    my $i;
    for ($i=1;$i <= $self->{rows};$i++) {
-      $self->setCellWidth($i, $col, $value);
+      $self->setCellHeight($i, $col, $value);
    }
 }
 
@@ -1681,6 +1681,24 @@ sub setColFormat{
    my $i;
    for ($i=1;$i <= $self->{rows};$i++) {
       $self->setCellFormat($i,$col, $start_string, $end_string);
+   }
+}
+
+#-------------------------------------------------------
+# Subroutine:	setColAttr(col, "Attribute string")
+# Author:		Benjamin Longuet
+# Date:			27 Feb 2002
+#-------------------------------------------------------
+sub setColAttr {
+   my $self = shift;
+   (my $col = shift) || return 0;
+   my $html_str = shift;
+
+   # this sub should set attribute string for each
+   # cell in a col given a col number;
+   my $i;
+   for ($i=1;$i <= $self->{rows};$i++) {
+      $self->setCellAttr($i,$col, $html_str);
    }
 }
 

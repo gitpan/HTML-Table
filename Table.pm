@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '1.16';
+$VERSION = '1.17';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -29,7 +29,11 @@ HTML::Table - produces HTML tables
                             -spacing=>0,
                             -padding=>0,
                             -style=>'color: blue',
-                            -class=>'myclass' );
+                            -class=>'myclass',
+                            -head=> ['head1', 'head2'],
+                            -data=> [ ['1:1', '1:2'], ['2:1', '2:2'] ] );
+   or
+  $table1 = new HTML::Table( [ ['1:1', '1:2'], ['2:1', '2:2'] ] );
 
   $table1->setCell($cellrow, $cellcol, 'This is Cell 1');
   $table1->setCellBGColor('blue');
@@ -447,6 +451,10 @@ For the setLast... methods
 David Link, dvlink@yahoo.com
 For the sort method
 
+Tommi Maekitalo, t.maekitalo@epgmbh.de
+For adding the 'head' parameter to the new method and for adding the initialisation from an array ref 
+to the new method.
+
 
 =head1 COPYRIGHT
 
@@ -507,6 +515,7 @@ perl(1), CGI(3)
 # Date:		30 Jul 1997
 # Modified:     30 Mar 1998 - Jay Flaherty
 # Modified:     13 Feb 2001 - Anthony Peacock
+# Modified:     30 Aug 2002 - Tommi Maekitalo
 #-------------------------------------------------------
 sub new {
 
@@ -516,34 +525,8 @@ my $class = ref($type) || $type;
 my $self ={};
 bless( $self, $class); 
 
-# If paramter list is a hash (of the form -param=>value, ...)
-if (defined $_[0] && $_[0] =~ /^-/) {
-    my %flags = @_;
-    $self->{rows} = $flags{-rows} || 0;
-    $self->{cols} = $flags{-cols} || 0;
-    $self->{border} = defined $flags{-border} && _is_validnum($flags{-border}) ? $flags{-border} : undef;
-    $self->{align} = $flags{-align} || undef;
-    $self->{rules} = $flags{-rules} || undef;
-    $self->{style} = $flags{-style} || undef;
-    $self->{class} = $flags{-class} || undef;
-    $self->{bgcolor} = $flags{-bgcolor} || undef;
-    $self->{background} = $flags{-background} || undef;
-    $self->{width} = $flags{-width} || undef;
-    $self->{cellspacing} = defined $flags{-spacing} && _is_validnum($flags{-spacing}) ? $flags{-spacing} : undef;
-    $self->{cellpadding} = defined $flags{-padding} && _is_validnum($flags{-padding}) ? $flags{-padding} : undef;
-
-}
-else # user supplied row and col (or default to 0,0)
-{
-    $self->{rows} = shift || 0;
-    $self->{cols} = shift || 0;
-}
-
 # let's initialize our empty table
 $self->{table} = {};
-
-# Table Auto-Grow mode (default on)
-$self->{autogrow} = 1;
 
 # Cell alignment is tracked in two mirror tables
 $self->{"table:align"} = {};
@@ -566,6 +549,57 @@ $self->{"table:cellspan"} = {};
 
 # Cell Row header mask
 $self->{"table:cellhead"} = {};
+
+# If paramter list is a hash (of the form -param=>value, ...)
+if (defined $_[0] && $_[0] =~ /^-/) {
+    my %flags = @_;
+    $self->{rows} = $flags{-rows} || 0;
+    $self->{cols} = $flags{-cols} || 0;
+    $self->{border} = defined $flags{-border} && _is_validnum($flags{-border}) ? $flags{-border} : undef;
+    $self->{align} = $flags{-align} || undef;
+    $self->{rules} = $flags{-rules} || undef;
+    $self->{style} = $flags{-style} || undef;
+    $self->{class} = $flags{-class} || undef;
+    $self->{bgcolor} = $flags{-bgcolor} || undef;
+    $self->{background} = $flags{-background} || undef;
+    $self->{width} = $flags{-width} || undef;
+    $self->{cellspacing} = defined $flags{-spacing} && _is_validnum($flags{-spacing}) ? $flags{-spacing} : undef;
+    $self->{cellpadding} = defined $flags{-padding} && _is_validnum($flags{-padding}) ? $flags{-padding} : undef;
+
+    if ($flags{-head})
+    {
+      $self->addRow(@{$flags{-head}});
+      $self->setRowHead(1);
+    }
+
+    if ($flags{-data})
+    {
+      foreach (@{$flags{-data}})
+      {
+        $self->addRow(@$_);
+      }
+    }
+
+}
+elsif (ref $_[0])
+{
+    # Array-reference [ ['row0col0', 'row0col1'], ['row1col0', 'row1col1'] ]
+    $self->{rows} = 0;
+    $self->{cols} = 0;
+    foreach (@{$_[0]})
+    {
+      $self->addRow(@$_);
+    }
+
+}
+else # user supplied row and col (or default to 0,0)
+{
+    $self->{rows} = shift || 0;
+    $self->{cols} = shift || 0;
+}
+
+# Table Auto-Grow mode (default on)
+$self->{autogrow} = 1;
 
 return $self;
 }	
@@ -1997,11 +2031,12 @@ sub _getTableHashValues {
 # Description:	Checks the string value passed as a parameter
 #               and returns true if it is >= 0
 # Modified:		23 Oct 2001 - Terence Brown
+# Modified:     30 Aug 2002 - Tommi Maekitalo
 #-------------------------------------------------------
 sub _is_validnum {
 	my $str = shift;
 
-	if ( $str =~ /^\s*\d+\s*$/ && $str >= 0 ) {
+	if ( defined($str) && $str =~ /^\s*\d+\s*$/ && $str >= 0 ) {
 		return 1;
 	} else {
 		return;
@@ -2053,4 +2088,5 @@ sub AUTOLOAD {
 1;
 
 __END__
+
 

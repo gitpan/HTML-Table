@@ -1,5 +1,12 @@
 Revision history for Perl extension HTML::Table.
 
+1.17  2 September 2002
+	- Added the 'head' parameter to the new method.
+	  Thanks to Tommi Maekitalo <t.maekitalo@epgmbh.de> for this addition
+	- Added the ability to initialise the table from an array ref to the new 
+	  method.
+	  Thanks to Tommi Maekitalo <t.maekitalo@epgmbh.de> for this addition
+
 1.16  22 July 2002
 	- Method setCellSpan was documented but not implemented.
 	  Thanks to David Link <dvlink@yahoo.com> for finding this

@@ -1,5 +1,12 @@
 Revision history for Perl extension HTML::Table.
 
+2.02
+      18 March 2004
+    - Changed the history section in the POD to add the original author's consent for
+      the adoption of the module by Anthony Peacock.
+      Thanks to Stacy Lacey <stacy-lacy@computer.org> for this.
+    - Beta testing over, promote this version to production.
+    
 2.02-beta
 	  18 Feb 2004
 	- Bug in getTable method, when using row attributes.  

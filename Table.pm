@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.02-beta';
+$VERSION = '2.02';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -461,9 +461,8 @@ This module was originally created in 1997 by Stacy Lacy and whose last
 version was uploaded to CPAN in 1998.  The module was adopted in July 2000 
 by Anthony Peacock in order to distribute a revised version.  This adoption 
 took place without the explicit consent of Stacy Lacy as it proved impossible 
-to contact them at the time.  Although explicit consent was not obtained at 
-the time, there was some evidence that Stacy Lacy was looking for somebody 
-to adopt the module in 1998.
+to contact them at the time.  Explicit consent for the adoption has since been 
+received.
 
 =head1 AUTHOR
 
@@ -494,10 +493,9 @@ Tommi Maekitalo, t.maekitalo@epgmbh.de
 For adding the 'head' parameter to the new method and for adding the initialisation from an array ref 
 to the new method.
 
-
 =head1 COPYRIGHT
 
-Copyright (c) 2000 Anthony Peacock, CHIME.
+Copyright (c) 2000-2003 Anthony Peacock, CHIME.
 Copyright (c) 1997 Stacy Lacy
 
 This library is free software; you can redistribute it and/or

@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.12a';
+$VERSION = '1.13';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -21,11 +21,14 @@ HTML::Table - produces HTML tables
     or
   $table1 = new HTML::Table(-rows=>26,
                             -cols=>2,
+                            -align=>"center",
+                            -rules=>"rows",
                             -border=>0,
                             -bgcolor=>"blue",
                             -width=>"50\%",
                             -spacing=>0,
-                            -padding=>0);
+                            -padding=>0,
+                            -style=>"color: blue");
 
   $table1->setCell($cellrow, $cellcol, 'This is Cell 1');
   $table1->setCellBGColor('blue');
@@ -91,7 +94,9 @@ considered an empty table.
 
 =item new HTML::Table([-rows=>num_rows, 
 		 -cols=>num_cols, 
-		 -border=>border_width, 
+		 -border=>border_width,
+		 -align=>table_alignment,
+		 -style=>table_style,
 		 -bgcolor=>back_colour, 
 		 -width=>table_width, 
 		 -spacing=>cell_spacing, 
@@ -133,6 +138,19 @@ Sets the table width
 Switches on (default) or off automatic growing of the table
 if row or column values passed to setCell exceed current
 table size.
+
+=item setAlign ( [ LEFT , CENTER , RIGHT ] ) 
+
+=item setRules ( [ ROWS , COLS , ALL, BOTH , GROUPS  ] ) 
+
+=item setStyle ( 'css style' ) 
+
+Sets the table style attribute.
+
+=item setAttr ( 'user attribute' ) 
+
+Sets a user defined attribute for the table.  Useful for when
+HTML::Table hasn't implemented a particular attribute yet
 
 =item getTableRows
 
@@ -210,6 +228,15 @@ This enables formatting to be applied to the cell contents.
 
 	$table->setCellFormat(1, 2, '<b>', '</b>');
 
+=item setCellStyle (row_num, col_num, 'css style') 
+
+Sets the cell style attribute.
+
+=item setCellAttr (row_num, col_num, 'user attribute') 
+
+Sets a user defined attribute for the cell.  Useful for when
+HTML::Table hasn't implemented a particular attribute yet
+
 =item getCell(row_num, col_num)
 
 Returns the contents of the specified cell as a string.
@@ -258,6 +285,14 @@ Applies setCellBGColor over the entire column.
 
 Applies setCellFormat over the entire column.
 
+=item setColStyle (col_num, 'css style') 
+
+Applies setCellStyle over the entire column.
+
+=item setColAttr (col_num, 'user attribute') 
+
+Applies setCellAttr over the entire column.
+
 =back
 
 =head2 Row Level Methods
@@ -301,6 +336,14 @@ Applies setCellBGColor over the entire row.
 =item setRowFormat(row_num, start_string, end_string)
 
 Applies setCellFormat over the entire row.
+
+=item setRowStyle (row_num, 'css style') 
+
+Applies setCellStyle over the entire row.
+
+=item setRowAttr (row_num, 'user attribute') 
+
+Applies setCellAttr over the entire row.
 
 =back
 
@@ -361,9 +404,12 @@ For ROW, COL & CELL HEAD methods. Modified the new method to allow hash of value
 John Stumbles, john@uk.stumbles.org
 For autogrow behaviour of setCell, and allowing alignment specifications to be case insensitive
 
+Arno Teunisse, Arno.Teunisse@Simac.nl
+For the methods adding rules, styles and table alignment attributes.
+
 =head1 COPYRIGHT
 
-Copyright (c) 1998-2001 Anthony Peacock, CHIME.
+Copyright (c) 2000 Anthony Peacock, CHIME.
 Copyright (c) 1997 Stacy Lacy
 
 This library is free software; you can redistribute it and/or
@@ -435,11 +481,15 @@ if (defined $_[0] && $_[0] =~ /^-/) {
     $self->{rows} = $flags{-rows} || 0;
     $self->{cols} = $flags{-cols} || 0;
     $self->{border} = defined $flags{-border} && _is_validnum($flags{-border}) ? $flags{-border} : undef;
+    $self->{align} = $flags{-align} || undef;
+    $self->{rules} = $flags{-rules} || undef;
+    $self->{style} = $flags{-style} || undef;
     $self->{bgcolor} = $flags{-bgcolor} || undef;
     $self->{background} = $flags{-background} || undef;
     $self->{width} = $flags{-width} || undef;
     $self->{cellspacing} = defined $flags{-spacing} && _is_validnum($flags{-spacing}) ? $flags{-spacing} : undef;
     $self->{cellpadding} = defined $flags{-padding} && _is_validnum($flags{-padding}) ? $flags{-padding} : undef;
+
 }
 else # user supplied row and col (or default to 0,0)
 {
@@ -485,6 +535,8 @@ return $self;
 # Modified:     19 Mar 1998 - Jay Flaherty
 # Modified:     13 Feb 2001 - Anthony Peacock
 # Modified:		23 Oct 2001 - Terence Brown
+# Modified:		05 Jan 2002 - Arno Teunisse
+# Modified:		10 Jan 2002 - Anthony Peacock
 #-------------------------------------------------------
 sub getTable {
    my $self = shift;
@@ -494,13 +546,17 @@ sub getTable {
    if ((! $self->{rows}) || (! $self->{cols})) {
       return ;  # no rows or no cols
    }
-   $html .="<table";
+   $html .='<table';
    $html .=" border=\"$self->{border}\"" if defined $self->{border};
    $html .=" cellspacing=\"$self->{cellspacing}\"" if defined $self->{cellspacing};
    $html .=" cellpadding=\"$self->{cellpadding}\"" if defined $self->{cellpadding};
    $html .=" width=\"$self->{width}\"" if defined $self->{width};
    $html .=" bgcolor=\"$self->{bgcolor}\"" if defined $self->{bgcolor};
    $html .=" background=\"$self->{background}\"" if defined $self->{background};
+   $html .=" rules=\"$self->{rules}\"" if defined $self->{rules} ;		# add rules for table
+   $html .=" align=\"$self->{align}\"" if defined $self->{align} ; 		# alignment of the table
+   $html .=" style=\"$self->{style}\"" if defined $self->{style} ; 		# style for the table
+   $html .=" $self->{attr}\"" if defined $self->{attr} ;		 		# user defined attribute string
    $html .=">\n";
    if (defined $self->{caption}) {
       $html .="<caption";
@@ -509,12 +565,20 @@ sub getTable {
    }
 
    my ($i, $j);
-   for ($i=1;$i <= ($self->{rows});$i++){
-      # Print each row of the table   
-      $html .="<tr>";
+	for ($i=1;$i <= ($self->{rows});$i++){
+    	# Print each row of the table   
+		$html .="<tr" ;		
+
+		# Set the row attributes (if any)
+		$html .= ' bgcolor="' . $self->{'table:RowBGColor'}{$i} . '"' if defined $self->{'table:RowBGColor'}{$i};
+		$html .= ' align="' . $self->{'table:RowAlign'}{$i} . '"'  if defined $self->{'table:RowAlign'}{$i};		
+		$html .= ' style="' . $self->{'table:RowStyle'}{$i} . '"'  if defined $self->{'table:RowStyle'}{$i} ;
+		$html .= " $self->{'table:RowAttr'}{$i}" if defined $self->{'table:RowAttr'}{$i} ;
+		$html .= ">" ; 	# Closing tr tag
+		
       for ($j=1; $j <= ($self->{cols}); $j++) {
           
-          if (defined $self->{"table:cellspan"}{"$i:$j"} && $self->{"table:cellspan"}{"$i:$j"} eq "SPANNED"){
+          if (defined $self->{'table:cellspan'}{"$i:$j"} && $self->{"table:cellspan"}{"$i:$j"} eq "SPANNED"){
              $html.="<!-- spanned cell -->";
              next
           }
@@ -543,6 +607,14 @@ sub getTable {
           # apply background color if set
           $html .=" bgcolor=\"" . $self->{"table:cellbgcolor"}{"$i:$j"} . "\""
                 if defined $self->{"table:cellbgcolor"}{"$i:$j"};
+
+          # apply style if set
+          $html .=" style=\"" . $self->{"table:cellstyle"}{"$i:$j"} . "\""
+                if defined $self->{"table:cellstyle"}{"$i:$j"};
+
+          # User defined attribute
+          $html .=" " . $self->{"table:cellattr"}{"$i:$j"}
+                if defined $self->{"table:cellattr"}{"$i:$j"};
 
           # if nowrap mask is set, put it in the cell tag
           $html .=" nowrap" if defined $self->{"table:nowrap"}{"$i:$j"};
@@ -685,6 +757,38 @@ sub setCaption {
    } else {
       $self->{caption_align} = 'TOP';
    }
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setAlign([left|right|center]) 
+# Author:         Arno Teunisse	 ( freely copied from setBGColor
+# Date:		      05 Jan 2002
+# 
+#-------------------------------------------------------
+sub setAlign {
+   my $self = shift;
+   $self->{t_align} = shift || undef;
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setRules([left|right|center]) 
+# Author:         Arno Teunisse	 ( freely copied from setBGColor
+# Date:		      05 Jan 2002
+# parameter  	[ none | groups | rows| cols | all ]
+#-------------------------------------------------------
+sub setRules {
+   my $self = shift;
+   $self->{rules} = shift || undef;
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setAttr("attribute string") 
+# Author:         Anthony Peacock
+# Date:		      10 Jan 2002
+#-------------------------------------------------------
+sub setAttr {
+   my $self = shift;
+   $self->{attr} = shift || undef;
 }
 
 #-------------------------------------------------------
@@ -924,7 +1028,7 @@ sub setCellWidth {
 
    if (! $value) {
       #return to default alignment if none specified
-      undef $self->{"table:height"}{"$row:$col"};
+      undef $self->{"table:width"}{"$row:$col"};
       return ($row, $col);
    }
 
@@ -1107,6 +1211,64 @@ sub setCellFormat {
 }
 
 #-------------------------------------------------------
+# Subroutine:  	setCellStyle(row_num, col_num, "Style") 
+# Author:       Anthony Peacock	
+# Date:			10 Jan 2002
+#-------------------------------------------------------
+sub setCellStyle {
+   my $self = shift;
+   (my $row = shift) || return 0;
+   (my $col = shift) || return 0;
+   (my $value = shift);
+
+   if (($row > $self->{rows}) || ($row < 1) ) {
+      print STDERR "$0:setCellStyle:Invalid table reference\n";
+      return 0;
+   }
+   if (($col > $self->{cols}) || ($col < 1) ) {
+      print STDERR "$0:setCellStyle:Invalid table reference\n";
+      return 0;
+   }
+
+   if (! $value) {
+      #return to default style if none specified
+      undef $self->{"table:cellstyle"}{"$row:$col"};
+      return ($row, $col);
+   }
+
+   $self->{"table:cellstyle"}{"$row:$col"} = $value;
+   return ($row, $col);
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setCellAttr(row_num, col_num, "cell attribute string") 
+# Author:       Anthony Peacock
+# Date:			10 Jan 2002
+#-------------------------------------------------------
+sub setCellAttr {
+   my $self = shift;
+   (my $row = shift) || return 0;
+   (my $col = shift) || return 0;
+   (my $value = shift);
+
+   if (($row > $self->{rows}) || ($row < 1) ) {
+      print STDERR "$0:setCellAttr:Invalid table reference\n";
+      return 0;
+   }
+   if (($col > $self->{cols}) || ($col < 1) ) {
+      print STDERR "$0:setCellAttr:Invalid table reference\n";
+      return 0;
+   }
+
+   if (! $value) {
+      undef $self->{"table:cellattr"}{"$row:$col"};
+   }
+
+   $self->{"table:cellattr"}{"$row:$col"} = $value;
+   return ($row, $col);
+}
+
+#-------------------------------------------------------
 # Row config methods
 # 
 #-------------------------------------------------------
@@ -1136,24 +1298,54 @@ sub addRow {
 
 #-------------------------------------------------------
 # Subroutine:  	setRowAlign(row_num, [CENTER|RIGHT|LEFT]) 
-# Author:       Stacy Lacy	
-# Date:		30 Jul 1997
+# Author:       Stacy Lacy
+# Date:			30 Jul 1997
+# Modified:		05 Jan 2002 - Arno Teunisse
+# Modified:		10 Jan 2002 - Anthony Peacock
 #-------------------------------------------------------
 sub setRowAlign {
-   my $self = shift;
-   (my $row = shift) || return 0;
-   my $align = shift;
-   # this sub should align a row given a row number;
-   my $i;
-   for ($i=1;$i <= $self->{cols};$i++) {
-      $self->setCellAlign($row,$i, $align);
-   }
+	my $self = shift;
+	(my $row = shift) || return 0;
+	my $align = shift;
+	my $maxRows = $self-> getTableRows(); 
+
+	if ( $row > $maxRows || $row < 1 ) {
+		print STDERR "\n$0:setRowAlign: Invalid table reference" ;
+		return 0;
+	} elsif ( $align !~ /left|right|center/i ) {
+		print STDERR "\nsetRowAlign: Alignment can be : 'LEFT | RIGHT | CENTER' : Cur value: $align\n";
+		return 0;
+	}
+	
+	$self->{"table:RowAlign"}{"$row"} = $align  ;
 }
+
+#-------------------------------------------------------
+# Subroutine:	setRowStyle
+# Comment:		to insert a css style the <TR > Tag
+# Author:		Arno Teunisse
+# Date:			05 Jan 2002
+# Modified: 	10 Jan 2002 - Anthony Peacock
+#-------------------------------------------------------
+sub setRowStyle {
+	my $self = shift;
+	(my $row = shift) || return 0;
+	my $html_str = shift;
+
+	my $maxRows = $self-> getTableRows(); 
+	if ( $row > $maxRows || $row < 1 ) {
+		print STDERR "\n$0:setRowStyle: Invalid table reference" ;
+		return 0;
+	}
+	
+	$self->{"table:RowStyle"}{"$row"} = "$html_str"  ;
+}
+
 
 #-------------------------------------------------------
 # Subroutine:  	setRowVAlign(row_num, [CENTER|TOP|BOTTOM]) 
 # Author:       Stacy Lacy	
-# Date:		30 Jul 1997
+# Date:			30 Jul 1997
 #-------------------------------------------------------
 sub setRowVAlign {
    my $self = shift;
@@ -1169,7 +1361,7 @@ sub setRowVAlign {
 #-------------------------------------------------------
 # Subroutine:  	setRowHead(row_num, [0|1]) 
 # Author:       Stacy Lacy	
-# Date:		30 Jul 1997
+# Date:			30 Jul 1997
 #-------------------------------------------------------
 sub setRowHead {
    my $self = shift;
@@ -1239,17 +1431,39 @@ sub setRowHeight {
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
 #-------------------------------------------------------
-sub setRowBGColor {
-   my $self = shift;
-   (my $row = shift) || return 0;
-   my $value = shift;
+#sub setRowBGColor {
+#   my $self = shift;
+#   (my $row = shift) || return 0;
+#   my $value = shift;
    # this sub should set bgcolor for each
    # cell in a row given a row number;
-   my $i;
-   for ($i=1;$i <= $self->{cols};$i++) {
-      $self->setCellBGColor($row,$i, $value);
-   }
+#   my $i;
+#   for ($i=1;$i <= $self->{cols};$i++) {
+#      $self->setCellBGColor($row,$i, $value);
+#   }
+#}
+
+#-------------------------------------------------------
+# Subroutine:  	setRowBGColor(row_num, [colorname|colortriplet]) 
+# Author:		Arno Teunisse 	
+# Date:			08 Jan 2002
+# Modified:		10 Jan 2002 - Anthony Peacock
+#-------------------------------------------------------
+sub setRowBGColor {
+	my $self = shift;
+	(my $row = shift) || return 0;
+	my $value = shift;
+
+	# You cannot set a none existent row
+	my $maxRows = $self-> getTableRows(); 
+	if ( $row > $maxRows || $row < 1 ) {
+		print STDERR "\n$0:setRowBGColor: Invalid table reference" ;
+		return 0;
+	}
+	
+	$self->{"table:RowBGColor"}{"$row"} = $value  ;
 }
+
 
 #-------------------------------------------------------
 # Subroutine:  	setRowFormat(row_num, start_string, end_string) 
@@ -1267,6 +1481,26 @@ sub setRowFormat {
    for ($i=1;$i <= $self->{cols};$i++) {
       $self->setCellFormat($row,$i, $start_string, $end_string);
    }
+}
+
+#-------------------------------------------------------
+# Subroutine:	setRowAttr(row, "Attribute string")
+# Comment:		To add user defined attribute to specified row
+# Author:		Anthony Peacock
+# Date:			10 Jan 2002
+#-------------------------------------------------------
+sub setRowAttr {
+	my $self = shift;
+	(my $row = shift) || return 0;
+	my $html_str = shift;
+
+	my $maxRows = $self-> getTableRows(); 
+	if ( $row > $maxRows || $row < 1 ) {
+		print STDERR "\n$0:setRowAttr: Invalid table reference" ;
+		return 0;
+	}
+	
+	$self->{"table:RowAttr"}{"$row"} = "$html_str"  ;
 }
 
 #-------------------------------------------------------
@@ -1415,6 +1649,24 @@ sub setColBGColor{
 }
 
 #-------------------------------------------------------
+# Subroutine:  	setColStyle(col_num, "style") 
+# Author:       Anthony Peacock
+# Date:			10 Jan 2002
+#-------------------------------------------------------
+sub setColStyle{
+   my $self = shift;
+   (my $col = shift) || return 0;
+   my $value = shift || 1;
+
+   # this sub should set style for each
+   # cell in a col given a col number;
+   my $i;
+   for ($i=1;$i <= $self->{rows};$i++) {
+      $self->setCellStyle($i,$col, $value);
+   }
+}
+
+#-------------------------------------------------------
 # Subroutine:  	setColFormat(row_num, start_string, end_string) 
 # Author:       Anthony Peacock
 # Date:			21 Feb 2001
@@ -1523,3 +1775,4 @@ sub _is_validnum {
 1;
 
 __END__
+

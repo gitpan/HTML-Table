@@ -1,5 +1,14 @@
 Revision history for Perl extension HTML::Table.
 
+1.08  15 May 2001
+	- Fixed bug in autoGrow method, that failed to switch off autoGrow
+	  when called with the integer 0.
+	  
+1.07d 15 May 2001
+	- Fixed minor bug in setCaption that issued unwarrented warnings
+	  under use warnings, if the optional second parameter was 
+	  missing.
+	  	  
 1.07c 15 May 2001
 	- Fixed bug in setCellRowSpan and setCellColSpan, with 'autogrow' 
 	  enabled.  This failed to properly autogrow the table if a span 

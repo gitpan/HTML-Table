@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.07d';
+$VERSION = '1.08';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -575,15 +575,19 @@ sub print {
 }
 
 #-------------------------------------------------------
-# Subroutine:  	autoGrow([1|on|true|1|off|false]) 
+# Subroutine:  	autoGrow([1|on|true|0|off|false]) 
 # Author:       John Stumbles
 # Date:		08 Feb 2001
 # Description:  switches on (default) or off auto-grow mode
 #-------------------------------------------------------
 sub autoGrow {
     my $self = shift;
-    $self->{autogrow} = (shift or 1) ;
-    $self->{autogrow} = 0 if $self->{autogrow} =~ /^(?:0|no|off|false|disable)$/i ;
+    $self->{autogrow} = shift;
+	if ( defined $self->{autogrow} && $self->{autogrow} =~ /^(?:no|off|false|disable|0)$/i ) {
+	    $self->{autogrow} = 0;
+	} else {
+		$self->{autogrow} = 1;
+	}
 }
 
 
@@ -1418,11 +1422,11 @@ sub _updateSpanGrid {
 
    my $colspan = $self->{"table:cellcolspan"}{"$row:$col"} || 0;
    my $rowspan = $self->{"table:cellrowspan"}{"$row:$col"} || 0;
+
 	if ($self->{autogrow}) {
 		$self->{cols} = $col + $colspan - 1 unless $self->{cols} > ($col + $colspan - 1 );
 		$self->{rows} = $row + $rowspan - 1 unless $self->{rows} > ($row + $rowspan - 1 );
 	}
-
 
    my ($i, $j);
    if ($colspan) {

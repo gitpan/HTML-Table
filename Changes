@@ -1,5 +1,19 @@
 Revision history for Perl extension HTML::Table.
 
+1.20  22 Oct 2003
+	- Changed setRowVAlign to set the attribute in the TR tag instead of in each 
+	  TD tag.
+	  Fixed by Anthony Peacock <a.peacock@chime.ucl.ac.uk>
+	- Changed setRowNoWrap to set the attribute in the TR tag instead of in each 
+	  TD tag.
+	  Fixed by Anthony Peacock <a.peacock@chime.ucl.ac.uk>
+	- Changed all of the set* methods to accept -1 as a col or row reference.
+	  Where -1 is used, the method will work on the last row or col.
+	  Fixed by Anthony Peacock <a.peacock@chime.ucl.ac.uk>
+	- Updated the documentation to include the setLast methods (added July 2002!)
+	  and the -1 col/row parameter change.
+	  Fixed by Anthony Peacock <a.peacock@chime.ucl.ac.uk>
+
 1.19  22 Aug 2003
     - Added MIDDLE and BASELINE parameters to setCellVAlign.
    	  Thanks to Alejandro Juarez <alex@BSDCoders.Org> for adding this

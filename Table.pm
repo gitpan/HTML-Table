@@ -4,7 +4,10 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.02';
+$VERSION = '1.03';
+
+use overload	'""'	=>	\&getTable,
+				fallback => undef;
 
 =head1 NAME
 
@@ -181,6 +184,23 @@ Returns the contents of the specified cell as a string.
 Returns a string containing the HTML representation
 of the table.
 
+The same effect can also be achieved by using the object reference 
+in a string scalar context.
+
+For example...
+
+	This code snippet:
+
+		$table = new HTML::Table(2, 2);
+		print "<P>Start</P>";
+		print $table->getTable;
+		print "<P>End</P>";
+
+	would produce the same output as:
+
+		$table = new HTML::Table(2, 2);
+		print "<P>Start</P>$table<P>End</P>";
+
 =item print
 
 Prints HTML representation of the table to STDOUT
@@ -221,6 +241,7 @@ perl(1), CGI(3)
 #  Internal Methods-------------------------------------------
 #  _updateSpanGrid(row_num, col_num)
 #  _getTableHashValues(tablehashname)
+#  _is_integer(stringvalue)
 #
 # Documentation:
 # Valid Netscape Navigator BGColors as of 07/30/1997
@@ -536,6 +557,7 @@ sub getTable {
    return ($html);
       
 }
+
 #-------------------------------------------------------
 # Subroutine:  	print
 # Author:         Stacy Lacy	

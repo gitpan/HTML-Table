@@ -1,5 +1,14 @@
 Revision history for Perl extension HTML::Table.
 
+1.07  23 February 2001
+	- Some general tidying up of both the documentation and code
+
+	- Added methods setCellFormat, setRowFormat and setColFormat.  These set cell
+	  formatting strings that will be appended and prepended to the cell contents.
+	  
+	- Created Row and Col versions of all relevant methods, this makes the interface
+	  more consistent.	 
+
 1.06  13 February 2001
 	- Some general tidying up of both the documentation and code
 

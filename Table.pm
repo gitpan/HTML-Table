@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.07b';
+$VERSION = '1.07c';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -1419,6 +1419,12 @@ sub _updateSpanGrid {
 
    my $colspan = $self->{"table:cellcolspan"}{"$row:$col"} || 0;
    my $rowspan = $self->{"table:cellrowspan"}{"$row:$col"} || 0;
+	if ($self->{autogrow}) {
+		$self->{cols} = $col + $colspan - 1 unless $self->{cols} > ($col + $colspan - 1 );
+		$self->{rows} = $row + $rowspan - 1 unless $self->{rows} > ($row + $rowspan - 1 );
+	}
+
+
    my ($i, $j);
    if ($colspan) {
       for ($j=$col+1;(($j <= $self->{cols}) && ($j <= ($col +$colspan -1))); $j++ ) {

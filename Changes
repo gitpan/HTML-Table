@@ -1,8 +1,16 @@
 Revision history for Perl extension HTML::Table.
 
+1.07c 15 May 2001
+	- Fixed bug in setCellRowSpan and setCellColSpan, with 'autogrow' 
+	  enabled.  This failed to properly autogrow the table if a span 
+	  went outside the current table limits.
+	  Thanks to Mike Laufer <mikepl@nortelnetworks.com> for pointing 
+	  this out
+
 1.07b 7 March 2001
 	- Fixed bug in getTable method, not outputing cell contents of '0'.
-	  Thanks to Venkataramana Mokkapati <mvr707@hotmail.com> for pointing this out
+	  Thanks to Venkataramana Mokkapati <mvr707@hotmail.com> for pointing 
+	  this out
 
 1.07a 1 March 2001
 	- Fixed bug in new method, rows and cols parameters were not being 
@@ -11,11 +19,12 @@ Revision history for Perl extension HTML::Table.
 1.07  23 February 2001
 	- Some general tidying up of both the documentation and code
 
-	- Added methods setCellFormat, setRowFormat and setColFormat.  These set cell
-	  formatting strings that will be appended and prepended to the cell contents.
+	- Added methods setCellFormat, setRowFormat and setColFormat.  These 
+	  set cell formatting strings that will be appended and prepended to 
+	  the cell contents.
 	  
-	- Created Row and Col versions of all relevant methods, this makes the interface
-	  more consistent.	 
+	- Created Row and Col versions of all relevant methods, this makes the 
+	  interface more consistent.	 
 
 1.06  13 February 2001
 	- Some general tidying up of both the documentation and code
@@ -46,7 +55,8 @@ Revision history for Perl extension HTML::Table.
 
 1.05a 8 February 2001
 	- Small corection to the documentation.  
-	  Thanks to John Stumbles <j.d.stumbles@reading.ac.uk> for pointing this out.
+	  Thanks to John Stumbles <j.d.stumbles@reading.ac.uk> for pointing this 
+	  out.
 
 1.05  6 February 2001
 	- Fix to prevent warnings if cell content is undefined.  
@@ -59,7 +69,8 @@ Revision history for Perl extension HTML::Table.
 	- Changed documentation, added reference to Japanese translation.
 
 1.04  17 August 2000
-	- Minor change to remove 'uninitialized variable' warning when working with -w
+	- Minor change to remove 'uninitialized variable' warning when working 
+	  with -w
 
 1.03  13 July 2000
 	- Overloaded the "" string interpolation operator onto the getTable method.
@@ -67,8 +78,8 @@ Revision history for Perl extension HTML::Table.
 	  Thanks to "B. K. Oxley" <binkley@bigfoot.com> for this suggestion.
 
 1.02  12 July 2000
-	- Changed setBorder, setCellPadding, setCellSpacing code to allow the attribute
-	  to take zero (0) values.
+	- Changed setBorder, setCellPadding, setCellSpacing code to allow the 
+	  attribute to take zero (0) values.
 
 1.01  7th July 2000
 	- Minor changes to the documentation section of Table.pm

@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.01-beta';
+$VERSION = '2.02-beta';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -644,7 +644,7 @@ sub getTable {
 		$html .= ' style="' . $self->{rows}[$i]->{style} . '"'  if defined $self->{rows}[$i]->{style} ;
 		$html .= ' class="' . $self->{rows}[$i]->{class} . '"'  if defined $self->{rows}[$i]->{class} ;
 		$html .= ' nowrap="' . $self->{rows}[$i]->{nowrap} . '"'  if defined $self->{rows}[$i]->{nowrap} ;
-		$html .= " $self->{rows}[$i]->{attr}" if defined $self->{rows}[$i]->{attr}{$i} ;
+		$html .= " $self->{rows}[$i]->{attr}" if defined $self->{rows}[$i]->{attr} ;
 		$html .= ">" ; 	# Closing tr tag
 		
       for ($j=1; $j <= ($self->{last_col}); $j++) {

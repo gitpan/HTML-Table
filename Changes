@@ -1,5 +1,9 @@
 Revision history for Perl extension HTML::Table.
 
+1.07b 7 March 2001
+	- Fixed bug in getTable method, not outputing cell contents of '0'.
+	  Thanks to Venkataramana Mokkapati <mvr707@hotmail.com> for pointing this out
+
 1.07a 1 March 2001
 	- Fixed bug in new method, rows and cols parameters were not being 
 	  accepted

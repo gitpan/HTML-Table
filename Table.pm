@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.07a';
+$VERSION = '1.07b';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -547,7 +547,7 @@ sub getTable {
           # Finish up Cell by ending cell start tag, putting content and cell end tag
           $html .=">";
           $html .= $self->{'table:cellstartformat'}{"$i:$j"} if defined $self->{'table:cellstartformat'}{"$i:$j"} ;
-          $html .= ($self->{table}{"$i:$j"} || '');
+          $html .= $self->{table}{"$i:$j"} if defined $self->{table}{"$i:$j"};
 		  $html .= $self->{'table:cellendformat'}{"$i:$j"} if defined $self->{'table:cellendformat'}{"$i:$j"} ;
           
           # if head flag is set print </TH> tag else </TD>

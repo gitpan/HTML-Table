@@ -1,5 +1,10 @@
 Revision history for Perl extension HTML::Table.
 
+1.18a 9 May 2003
+    - Fixed bug in new method, where specifying -rows and -head or -data caused
+      unexpected behaviour.
+   	  Thanks to Tom Brown <rvvs30@email.sps.mot.com> for finding this
+
 1.18  6 May 2003
     - Improved sort method.
    	  Thanks to David Link <dvlink@yahoo.com> for this addition

@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '1.18';
+$VERSION = '1.18a';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -567,8 +567,6 @@ $self->{"table:cellhead"} = {};
 # If paramter list is a hash (of the form -param=>value, ...)
 if (defined $_[0] && $_[0] =~ /^-/) {
     my %flags = @_;
-    $self->{rows} = $flags{-rows} || 0;
-    $self->{cols} = $flags{-cols} || 0;
     $self->{border} = defined $flags{-border} && _is_validnum($flags{-border}) ? $flags{-border} : undef;
     $self->{align} = $flags{-align} || undef;
     $self->{rules} = $flags{-rules} || undef;
@@ -579,6 +577,7 @@ if (defined $_[0] && $_[0] =~ /^-/) {
     $self->{width} = $flags{-width} || undef;
     $self->{cellspacing} = defined $flags{-spacing} && _is_validnum($flags{-spacing}) ? $flags{-spacing} : undef;
     $self->{cellpadding} = defined $flags{-padding} && _is_validnum($flags{-padding}) ? $flags{-padding} : undef;
+    $self->{cols} = $flags{-cols} || 0;
 
     if ($flags{-head})
     {
@@ -593,6 +592,12 @@ if (defined $_[0] && $_[0] =~ /^-/) {
         $self->addRow(@$_);
       }
     }
+
+	if ($self->{rows}) {
+		$self->{rows} = $flags{-rows} if (defined $flags{-rows} && $self->{rows} < $flags{-rows});
+	} else {
+	    $self->{rows} = $flags{-rows} || 0;
+	}
 
 }
 elsif (ref $_[0])
@@ -1552,6 +1557,42 @@ sub setCellAttr {
 # Row config methods
 # 
 #-------------------------------------------------------
+
+#-------------------------------------------------------
+# Subroutine:  	setRow(row, "cell 1 content" [, "cell 2 content",  ...]) 
+# Author:       Anthony Peacock
+# Date:			8 May 2003
+#-------------------------------------------------------
+sub setRow {
+   my $self = shift;
+   my $row = shift;
+
+   if ($row < 1) {
+      print STDERR "$0:setRow:Invalid table row reference $row\n";
+      return 0;
+   }
+
+   if ($row > $self->{rows}) {
+      if ($self->{autogrow}) {
+        $self->{rows} = $row ;
+      } else {
+        print STDERR "$0:setRow:Invalid table row reference $row\n";
+      }
+   }
+
+   # this sub should add a row, using @_ as contents
+   my $count= @_;
+
+   # if number of cells is greater than cols, let's assume
+   # we want to add a column.
+   $self->{cols} = $count if ($count >$self->{cols});
+
+   my $i;
+   for ($i=1;$i <= $count;$i++) {
+      # Store each value in cell on row
+      $self->{table}{"$row:$i"} = shift;
+   }
+}
 
 #-------------------------------------------------------
 # Subroutine:  	addRow("cell 1 content" [, "cell 2 content",  ...]) 

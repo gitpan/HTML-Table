@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.00-beta';
+$VERSION = '2.01-beta';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -934,9 +934,9 @@ sub getTableCols{
 #                     )
 # Author:       David Link
 # Date:		28 Jun 2002
-# Modified:     09 Apr 2003 -- dl  Added options: -strip_html, 
+# Modified: 09 Apr 2003 -- dl  Added options: -strip_html, 
 #                                  -strip_non_numeric, and -presort_func.
-# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
+# Modified: 23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
 sub sort {
   my $self = shift;
@@ -944,6 +944,7 @@ sub sort {
       $strip_html, $strip_non_numeric, $presort_func);
   $strip_html = 1;
   $strip_non_numeric = 1;
+
   if (defined $_[0] && $_[0] =~ /^-/) {
       my %flag = @_;
       $sort_col = $flag{-sort_col} || 1;
@@ -982,14 +983,11 @@ sub sort {
   my $sorter = eval($sortfunc);
   my @sortkeys = sort $sorter (($skip_rows+1)..$self->{last_row});
 
-  my @holdtable = @$self->{rows};
-  my $i = $skip_rows;
-  for my $k (@sortkeys) {
-      ++$i;
-      for (my $j=1; $j <= $self->{last_col}; $j++) {
-	  $self->{rows}[$i]->{cells}[$j]->{contents} = $holdtable[$k]->{cells}[$j]->{contents};
-      }
-  }
+	my @holdtable = @{$self->{rows}};
+	my $i = $skip_rows+1;
+	for my $k (@sortkeys) {
+		$self->{rows}[$i++] = $holdtable[$k];
+	}
 }
 
 #-------------------------------------------------------

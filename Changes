@@ -1,5 +1,21 @@
 Revision history for Perl extension HTML::Table.
 
+1.12  23 Oct 2001
+	- Changed _is_integer to _is_validnum.
+	  Thanks to Terrence Brown <terrence@terrencebrown.com> for this modification
+	  
+	- Changed faulty behaviour of numeric parameters to the new method.  They 
+	  where treating a value of 0 as false, and using the default value.
+	  Thanks to Terrence Brown <terrence@terrencebrown.com> for this modification
+	  
+	- Changed all tags and attributes to print in lowercase.
+	  Thanks to Terrence Brown <terrence@terrencebrown.com> for this modification
+	  
+	- All attribute values are now surounded by qoutes.
+	  Thanks to Terrence Brown <terrence@terrencebrown.com> for this modification
+	
+	- Small documentation changes.
+	  
 1.11  10 Aug 2001
 	- getTable was returning 0 (zero) for an empty table, now just plain 
 	  returns.

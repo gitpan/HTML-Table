@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.11';
+$VERSION = '1.12';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -21,11 +21,11 @@ HTML::Table - produces HTML tables
     or
   $table1 = new HTML::Table(-rows=>26,
                             -cols=>2,
-                            -border=>1,
+                            -border=>0,
                             -bgcolor=>"blue",
                             -width=>"50\%",
-                            -spacing=>1,
-                            -padding=>1);
+                            -spacing=>0,
+                            -padding=>0);
 
   $table1->setCell($cellrow, $cellcol, 'This is Cell 1');
   $table1->setCellBGColor('blue');
@@ -115,7 +115,10 @@ Sets the table Border Width
 =item setWidth([pixels|percentofscreen])
 
 Sets the table width
-Remember to escape percent symbol if used
+
+ 	$table->setWidth(500);
+  or
+ 	$table->setWidth('100%');
 
 =item setCellSpacing([pixels])
 
@@ -170,7 +173,7 @@ Sets the height of the cell.
 
 =item setCellHead(row_num, col_num)
 
-Sets cell to be of type head (Ie <TH></TH>)
+Sets cell to be of type head (Ie <th></th>)
 
 =item setCellNoWrap(row_num, col_num, [0|1])
 
@@ -205,7 +208,7 @@ Start_string should be a string of valid HTML, which is output before
 the cell contents, end_string is valid HTML that is output after the cell contents.
 This enables formatting to be applied to the cell contents.
 
-	$table->setCellFormat(1, 2, '<B>', '</B>');
+	$table->setCellFormat(1, 2, '<b>', '</b>');
 
 =item getCell(row_num, col_num)
 
@@ -318,14 +321,14 @@ For example...
 	This code snippet:
 
 		$table = new HTML::Table(2, 2);
-		print '<P>Start</P>';
+		print '<p>Start</p>';
 		print $table->getTable;
-		print '<P>End</P>';
+		print '<p>End</p>';
 
 	would produce the same output as:
 
 		$table = new HTML::Table(2, 2);
-		print "<P>Start</P>$table<P>End</P>";
+		print "<p>Start</p>$table<p>End</p>";
 
 =item print
 
@@ -375,7 +378,7 @@ perl(1), CGI(3)
 #  Internal Methods-------------------------------------------
 #  _updateSpanGrid(row_num, col_num)
 #  _getTableHashValues(tablehashname)
-#  _is_integer(stringvalue)
+#  _is_validnum(stringvalue)
 #
 # Documentation:
 # Valid Netscape Navigator BGColors as of 07/30/1997
@@ -431,12 +434,12 @@ if (defined $_[0] && $_[0] =~ /^-/) {
     my %flags = @_;
     $self->{rows} = $flags{-rows} || 0;
     $self->{cols} = $flags{-cols} || 0;
-    $self->{border} = $flags{-border} || undef;
+    $self->{border} = defined $flags{-border} && _is_validnum($flags{-border}) ? $flags{-border} : undef;
     $self->{bgcolor} = $flags{-bgcolor} || undef;
     $self->{background} = $flags{-background} || undef;
     $self->{width} = $flags{-width} || undef;
-    $self->{cellspacing} = $flags{-spacing} || undef;
-    $self->{cellpadding} = $flags{-padding} || undef;
+    $self->{cellspacing} = defined $flags{-spacing} && _is_validnum($flags{-spacing}) ? $flags{-spacing} : undef;
+    $self->{cellpadding} = defined $flags{-padding} && _is_validnum($flags{-padding}) ? $flags{-padding} : undef;
 }
 else # user supplied row and col (or default to 0,0)
 {
@@ -476,11 +479,12 @@ return $self;
 }	
 
 #-------------------------------------------------------
-# Subroutine:  	getTable 
-# Author:       Stacy Lacy	
-# Date:		30 July 1997
+# Subroutine:  	getTable
+# Author:       Stacy Lacy
+# Date:			30 July 1997
 # Modified:     19 Mar 1998 - Jay Flaherty
 # Modified:     13 Feb 2001 - Anthony Peacock
+# Modified:		23 Oct 2001 - Terence Brown
 #-------------------------------------------------------
 sub getTable {
    my $self = shift;
@@ -490,24 +494,24 @@ sub getTable {
    if ((! $self->{rows}) || (! $self->{cols})) {
       return ;  # no rows or no cols
    }
-   $html .="<TABLE";
-   $html .=" BORDER=$self->{border}" if defined $self->{border};
-   $html .=" CELLSPACING=$self->{cellspacing}" if defined $self->{cellspacing};
-   $html .=" CELLPADDING=$self->{cellpadding}" if defined $self->{cellpadding};
-   $html .=" WIDTH=$self->{width}" if defined $self->{width};
-   $html .=" BGCOLOR=$self->{bgcolor}" if defined $self->{bgcolor};
-   $html .=" BACKGROUND=$self->{background}" if defined $self->{background};
+   $html .="<table";
+   $html .=" border=\"$self->{border}\"" if defined $self->{border};
+   $html .=" cellspacing=\"$self->{cellspacing}\"" if defined $self->{cellspacing};
+   $html .=" cellpadding=\"$self->{cellpadding}\"" if defined $self->{cellpadding};
+   $html .=" width=\"$self->{width}\"" if defined $self->{width};
+   $html .=" bgcolor=\"$self->{bgcolor}\"" if defined $self->{bgcolor};
+   $html .=" background=\"$self->{background}\"" if defined $self->{background};
    $html .=">\n";
    if (defined $self->{caption}) {
-      $html .="<CAPTION";
-      $html .=" ALIGN=$self->{caption_align}" if (defined $self->{caption_align});
-      $html .=">$self->{caption}</CAPTION>\n";
+      $html .="<caption";
+      $html .=" align=$self->{caption_align}" if (defined $self->{caption_align});
+      $html .=">$self->{caption}</caption>\n";
    }
 
    my ($i, $j);
    for ($i=1;$i <= ($self->{rows});$i++){
       # Print each row of the table   
-      $html .="<TR>";
+      $html .="<tr>";
       for ($j=1; $j <= ($self->{cols}); $j++) {
           
           if (defined $self->{"table:cellspan"}{"$i:$j"} && $self->{"table:cellspan"}{"$i:$j"} eq "SPANNED"){
@@ -516,40 +520,40 @@ sub getTable {
           }
           
           # print cell
-          # if head flag is set print <TH> tag else <TD>
+          # if head flag is set print <th> tag else <td>
           if (defined $self->{"table:cellhead"}{"$i:$j"}) {
-            $html .="<TH";
+            $html .="<th";
           } else { 
-            $html .="<TD";
+            $html .="<td";
           }
 
           # if alignment options are set, add them in the cell tag
-          $html .=" ALIGN=" . $self->{"table:align"}{"$i:$j"}
+          $html .=" align=\"" . $self->{"table:align"}{"$i:$j"} . "\""
                 if defined $self->{"table:align"}{"$i:$j"};
           
-          $html .=" VALIGN=" . $self->{"table:valign"}{"$i:$j"}
+          $html .=" valign=\"" . $self->{"table:valign"}{"$i:$j"} . "\""
                 if defined $self->{"table:valign"}{"$i:$j"};
           
-          # Apply custom height and width to the cell tag
-          $html .=" WIDTH=" . $self->{"table:cellwidth"}{"$i:$j"}
+          # apply custom height and width to the cell tag
+          $html .=" width=\"" . $self->{"table:cellwidth"}{"$i:$j"} . "\""
                 if defined $self->{"table:cellwidth"}{"$i:$j"};
-          $html .=" HEIGHT=" . $self->{"table:cellheight"}{"$i:$j"}
+          $html .=" height=\"" . $self->{"table:cellheight"}{"$i:$j"} . "\""
                 if defined $self->{"table:cellheight"}{"$i:$j"};
                     
           # apply background color if set
-          $html .=" BGCOLOR=" . $self->{"table:cellbgcolor"}{"$i:$j"}
+          $html .=" bgcolor=\"" . $self->{"table:cellbgcolor"}{"$i:$j"} . "\""
                 if defined $self->{"table:cellbgcolor"}{"$i:$j"};
 
-          # if NOWRAP mask is set, put it in the cell tag
-          $html .=" NOWRAP" if defined $self->{"table:nowrap"}{"$i:$j"};
+          # if nowrap mask is set, put it in the cell tag
+          $html .=" nowrap" if defined $self->{"table:nowrap"}{"$i:$j"};
           
           # if column/row spanning is set, put it in the cell tag
           # also increment to skip spanned rows/cols.
           if (defined $self->{"table:cellcolspan"}{"$i:$j"}) {
-            $html .=" COLSPAN=" . $self->{"table:cellcolspan"}{"$i:$j"};
+            $html .=" colspan=\"" . $self->{"table:cellcolspan"}{"$i:$j"};
           }
           if (defined $self->{"table:cellrowspan"}{"$i:$j"}){
-            $html .=" ROWSPAN=" . $self->{"table:cellrowspan"}{"$i:$j"};
+            $html .=" rowspan=\"" . $self->{"table:cellrowspan"}{"$i:$j"};
           }
           
           # Finish up Cell by ending cell start tag, putting content and cell end tag
@@ -558,16 +562,16 @@ sub getTable {
           $html .= $self->{table}{"$i:$j"} if defined $self->{table}{"$i:$j"};
 		  $html .= $self->{'table:cellendformat'}{"$i:$j"} if defined $self->{'table:cellendformat'}{"$i:$j"} ;
           
-          # if head flag is set print </TH> tag else </TD>
+          # if head flag is set print </th> tag else </td>
           if (defined $self->{"table:cellhead"}{"$i:$j"}) {
-            $html .= "</TH>";
+            $html .= "</th>";
           } else {
-            $html .= "</TD>";
+            $html .= "</td>";
           }
       }
-      $html .="</TR>\n";
+      $html .="</tr>\n";
    }
-   $html .="</TABLE>\n";
+   $html .="</table>\n";
 
    return ($html);
 }
@@ -613,7 +617,7 @@ sub autoGrow {
 sub setBorder {
     my $self = shift;
     $self->{border} = shift;
-    $self->{border} = 1 unless ( &_is_integer($self->{border}) ) ;
+    $self->{border} = 1 unless ( &_is_validnum($self->{border}) ) ;
 }
 
 #-------------------------------------------------------
@@ -652,7 +656,7 @@ sub setWidth {
 sub setCellSpacing {
     my $self = shift;
     $self->{cellspacing} = shift;
-    $self->{cellspacing} = 1 unless ( &_is_integer($self->{cellspacing}) ) ;
+    $self->{cellspacing} = 1 unless ( &_is_validnum($self->{cellspacing}) ) ;
 }
 
 #-------------------------------------------------------
@@ -664,7 +668,7 @@ sub setCellSpacing {
 sub setCellPadding {
     my $self = shift;
     $self->{cellpadding} = shift;
-    $self->{cellpadding} = 1 unless ( &_is_integer($self->{cellpadding}) ) ;
+    $self->{cellpadding} = 1 unless ( &_is_validnum($self->{cellpadding}) ) ;
 }
 
 #-------------------------------------------------------
@@ -1499,16 +1503,17 @@ sub _getTableHashValues {
 }
 
 #-------------------------------------------------------
-# Subroutine:  	_is_integer(string_value)
+# Subroutine:  	_is_validnum(string_value)
 # Author:       Anthony Peacock	
-# Date:		12 Jul 2000
+# Date:			12 Jul 2000
 # Description:	Checks the string value passed as a parameter
-#               and returns true if it is an integer
+#               and returns true if it is >= 0
+# Modified:		23 Oct 2001 - Terence Brown
 #-------------------------------------------------------
-sub _is_integer {
+sub _is_validnum {
 	my $str = shift;
 
-	if ( $str =~ /^\s*\d+\s*$/ ) {
+	if ( $str =~ /^\s*\d+\s*$/ && $str >= 0 ) {
 		return 1;
 	} else {
 		return;

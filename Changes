@@ -1,5 +1,9 @@
 Revision history for Perl extension HTML::Table.
 
+1.19  22 Aug 2003
+    - Added MIDDLE and BASELINE parameters to setCellVAlign.
+   	  Thanks to Alejandro Juarez <alex@BSDCoders.Org> for adding this
+
 1.18a 9 May 2003
     - Fixed bug in new method, where specifying -rows and -head or -data caused
       unexpected behaviour.

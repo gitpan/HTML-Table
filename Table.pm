@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.12';
+$VERSION = '1.12a';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -550,10 +550,10 @@ sub getTable {
           # if column/row spanning is set, put it in the cell tag
           # also increment to skip spanned rows/cols.
           if (defined $self->{"table:cellcolspan"}{"$i:$j"}) {
-            $html .=" colspan=\"" . $self->{"table:cellcolspan"}{"$i:$j"};
+            $html .=" colspan=\"" . $self->{"table:cellcolspan"}{"$i:$j"} ."\"";
           }
           if (defined $self->{"table:cellrowspan"}{"$i:$j"}){
-            $html .=" rowspan=\"" . $self->{"table:cellrowspan"}{"$i:$j"};
+            $html .=" rowspan=\"" . $self->{"table:cellrowspan"}{"$i:$j"} ."\"";
           }
           
           # Finish up Cell by ending cell start tag, putting content and cell end tag

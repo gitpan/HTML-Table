@@ -1,5 +1,8 @@
 Revision history for Perl extension HTML::Table.
 
+1.12a 24 Oct 2001
+	- Fixed small bug in attribute quotiung code, that showed up with spanned cells.
+
 1.12  23 Oct 2001
 	- Changed _is_integer to _is_validnum.
 	  Thanks to Terrence Brown <terrence@terrencebrown.com> for this modification
@@ -11,7 +14,7 @@ Revision history for Perl extension HTML::Table.
 	- Changed all tags and attributes to print in lowercase.
 	  Thanks to Terrence Brown <terrence@terrencebrown.com> for this modification
 	  
-	- All attribute values are now surounded by qoutes.
+	- All attribute values are now surounded by quotes.
 	  Thanks to Terrence Brown <terrence@terrencebrown.com> for this modification
 	
 	- Small documentation changes.

@@ -1,5 +1,10 @@
 Revision history for Perl extension HTML::Table.
 
+1.11  10 Aug 2001
+	- getTable was returning 0 (zero) for an empty table, now just plain 
+	  returns.
+	  Suggested by Adrian Bridgett <adrian@dyadic.com>
+	  
 1.10  06 Aug 2001
 	- Added getTableRows and getTableCols.
 	  Suggested by Joerg Jaspert <joerg@goliathbbs.dnsalias.net>

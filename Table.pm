@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.10';
+$VERSION = '1.11';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -488,7 +488,7 @@ sub getTable {
 
    # this sub returns HTML version of the table object
    if ((! $self->{rows}) || (! $self->{cols})) {
-      return 0;  # no rows or no cols
+      return ;  # no rows or no cols
    }
    $html .="<TABLE";
    $html .=" BORDER=$self->{border}" if defined $self->{border};

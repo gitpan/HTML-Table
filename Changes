@@ -1,5 +1,9 @@
 Revision history for Perl extension HTML::Table.
 
+1.07a 1 March 2001
+	- Fixed bug in new method, rows and cols parameters were not being 
+	  accepted
+
 1.07  23 February 2001
 	- Some general tidying up of both the documentation and code
 

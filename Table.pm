@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '1.07';
+$VERSION = '1.07a';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -421,8 +421,8 @@ bless( $self, $class);
 # If paramter list is a hash (of the form -param=>value, ...)
 if (defined $_[0] && $_[0] =~ /^-/) {
     my %flags = @_;
-    $self->{rows} = $flags{-row} || 0;
-    $self->{cols} = $flags{-col} || 0;
+    $self->{rows} = $flags{-rows} || 0;
+    $self->{cols} = $flags{-cols} || 0;
     $self->{border} = $flags{-border} || undef;
     $self->{bgcolor} = $flags{-bgcolor} || undef;
     $self->{background} = $flags{-background} || undef;

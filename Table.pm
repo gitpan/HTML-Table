@@ -4,7 +4,7 @@ use strict;
 use 5.002;
 
 use vars qw($VERSION);
-$VERSION = '0.90';
+$VERSION = '1.01';
 
 =head1 NAME
 
@@ -67,7 +67,7 @@ cell tags specified for HTML 3.0.
 Creates a new HTML table object.  If rows and columns
 are specified, the table will be initialized to that
 size.  Row and Column numbers start at 1,1.  0,0 is
-considered and empty table.
+considered an empty table.
 
 =back
 
@@ -103,6 +103,7 @@ Remember to escape percent symbol if used
 Adds a row to the bottom of the table.  Assumes if you
 pass more values than there are columns that you want
 to increase the number of columns.
+
 
 =item addCol("cell 1 content" [, "cell 2 conent",  ...])
 
@@ -165,6 +166,10 @@ Joins the block of cells with the corners specified.
 If the values specified are greater than the number of
 rows or columns, a false value will be returned.
 
+=item getCell(row_num, col_num)
+
+Returns the contents of the specified cell as a string.
+
 =back
 
 =head2 Output Methods
@@ -184,10 +189,28 @@ Prints HTML representation of the table to STDOUT
 
 =head1 CLASS VARIABLES
 
+=head1 HISTORY
+
+This module was originally created in 1997 by Stacy Lacy and whose last 
+version was uploaded to CPAN in 1998.  The module was adopted in July 2000 
+by Anthony Peacock in order to distribute a revised version.  This adoption 
+took place without Stacy Lacy's explicit consent as it proved impossible 
+to contact them at the time.  Although explicit consent was not obtained at 
+the time, there was some evidence that Stacy Lacy was looking for somebody 
+to adopt the module in 1998.
 
 =head1 AUTHOR
 
-Stacy Lacy, stacy-lacy@worldnet.att.net
+Anthony Peacock, a.peacock@chime.ucl.ac.uk
+Stacy Lacy (Original author)
+
+=head1 COPYRIGHT
+
+Copyright (c) 1998-2000 Anthony Peacock, CHIME.
+Copyright (c) 1997 Stacy Lacy
+
+This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
@@ -399,6 +422,28 @@ sub setCell {
    }
    $self->{table}{"$row:$col"} = shift;
    return ($row, $col);
+
+}
+
+#-------------------------------------------------------
+# Subroutine:  	getCell(row_num, col_num) 
+# Author:         Addition by A Peacock	
+# Date:		      27 July 1998
+#-------------------------------------------------------
+sub getCell {
+   my $self = shift;
+   (my $row = shift) || return 0;
+   (my $col = shift) || return 0;
+
+   if (($row > $self->{rows}) || ($row < 1) ) {
+      print STDERR "$0:getCell:Invalid table reference $row:$col";
+      return 0;
+   }
+   if (($col > $self->{cols}) || ($col < 1) ) {
+      print STDERR "$0:getCell:Invalid table reference $row:$col";
+      return 0;
+   }
+   return $self->{table}{"$row:$col"} ;
 
 }
 

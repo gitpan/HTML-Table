@@ -1,5 +1,14 @@
 Revision history for Perl extension HTML::Table.
 
-0.01  Thu Aug  7 21:07:26 1997
-	- original version; created by h2xs 1.16
+1.01  7th July 2000
+    - Minor changes to the documentation section of Table.pm
 
+1.00  5th July 2000
+	- New maintainer; Anthony Peacock (a.peacock@chime.ucl.ac.uk)
+
+	- Added method - getCell(row_num, col_num) - to return the contents of 
+		the specified cell as a string. (a.peacock@chime.ucl.ac.uk)
+
+0.90  27th January 1998
+	- original version; Created by Stacy Lacy
+ 

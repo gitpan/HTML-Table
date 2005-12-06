@@ -1,5 +1,10 @@
 Revision history for Perl extension HTML::Table.
 
+2.03
+      6 December 2005
+    - Added get methods for Style attributes.
+      Thanks to Douglas Riordan <doug.riordan@gmail.com> for this.
+
 2.02
       18 March 2004
     - Changed the history section in the POD to add the original author's consent for

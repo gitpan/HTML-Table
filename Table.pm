@@ -1,10 +1,9 @@
 package HTML::Table;
 use strict;
-
-use 5.002;
+use warnings;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.02';
+$VERSION = '2.03';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -206,6 +205,10 @@ Returns the number of rows in the table.
 
 Returns the number of columns in the table.
 
+=item getStyle
+
+Returns the table's style attribute.
+
 =back
 
 =head2 Cell Level Methods
@@ -295,6 +298,10 @@ to the last row and last col of the table.
 
 Returns the contents of the specified cell as a string.
 
+=item getCellStyle(row_num, col_num)
+
+Returns cell's style attribute.
+
 =back
 
 =head2 Column Level Methods
@@ -356,6 +363,10 @@ Applies setCellAttr over the entire column.
 All of the setCol methods have a corresponding setLastCol method which 
 does not accept the col_num parameter, but automatically applies
 to the last col of the table.
+
+=item getColStyle(col_num)
+
+Returns column's style attribute.  Only really useful after setting a column's style via setColStyle().
 
 =back
 
@@ -419,6 +430,10 @@ All of the setRow methods have a corresponding setLastRow method which
 does not accept the row_num parameter, but automatically applies
 to the last row of the table.
 
+=item getRowStyle(row_num)
+
+Returns row's style attribute.
+
 =back
 
 =head2 Output Methods
@@ -471,6 +486,9 @@ Stacy Lacy (Original author)
 
 =head1 CONTRIBUTIONS
 
+Douglas Riordan <doug.riordan@gmail.com>
+For get methods for Style attributes.
+
 Jay Flaherty, fty@mediapulse.com
 For ROW, COL & CELL HEAD methods. Modified the new method to allow hash of values.
 
@@ -495,7 +513,7 @@ to the new method.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2000-2003 Anthony Peacock, CHIME.
+Copyright (c) 2000-2005 Anthony Peacock, CHIME.
 Copyright (c) 1997 Stacy Lacy
 
 This library is free software; you can redistribute it and/or
@@ -919,6 +937,17 @@ sub getTableCols{
 }
 
 #-------------------------------------------------------
+# Subroutine:   getStyle
+# Author:       Douglas Riordan
+# Date:         30 Nov 2005
+# Description:  getter for table style
+#-------------------------------------------------------
+
+sub getStyle {
+    return shift->{style} || undef;
+}
+
+#-------------------------------------------------------
 # Subroutine:  	sort (sort_col_num, [ALPHA|NUMERIC], [ASC|DESC], 
 #                         num_rows_to_skip)
 #               sort (-sort_col=>sort_col_num, 
@@ -1088,6 +1117,21 @@ sub getCell {
    }
 
    return $self->{rows}[$row]->{cells}[$col]->{contents} ;
+}
+
+#-------------------------------------------------------
+# Subroutine:   getCellStyle($row_num, $col_num)
+# Author:       Douglas Riordan
+# Date:         30 Nov 2005
+# Description:  getter for cell style
+#-------------------------------------------------------
+
+sub getCellStyle {
+    my ($self, $row, $col) = @_;
+
+    return $self->_checkRowAndCol('getCellStyle', {row => $row, col => $col})
+        ? $self->{rows}[$row]->{cells}[$col]->{style}
+        : undef;
 }
 
 #-------------------------------------------------------
@@ -1520,6 +1564,7 @@ sub setCellFormat {
 # Date:			10 Jan 2002
 # Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
 #-------------------------------------------------------
+
 sub setCellStyle {
    my $self = shift;
    (my $row = shift) || return 0;
@@ -1633,13 +1678,12 @@ sub addRow {
    my $self = shift;
 
    # this sub should add a row, using @_ as contents
-   my $count= @_;
+   my $count = @_;
    # if number of cells is greater than cols, let's assume
    # we want to add a column.
-   $self->{last_col} = $count if ($count >$self->{last_col});
+   $self->{last_col} = $count if ($count > $self->{last_col});
    $self->{last_row}++;  # increment number of rows
-   my $i;
-   for ($i=1;$i <= $count;$i++) {
+   for (my $i = 1; $i <= $count; $i++) {
       # Store each value in cell on row
          $self->{rows}[$self->{last_row}]->{cells}[$i]->{contents} = shift;
    }
@@ -1921,6 +1965,21 @@ sub setRowAttr {
 	}
 	
 	$self->{rows}[$row]->{attr} = $html_str;
+}
+
+#-------------------------------------------------------
+# Subroutine:   getRowStyle($row_num)
+# Author:       Douglas Riordan
+# Date:         1 Dec 2005
+# Description:  getter for row style
+#-------------------------------------------------------
+
+sub getRowStyle {
+    my ($self, $row) = @_;
+
+    return $self->_checkRowAndCol('getRowStyle', {row => $row})
+        ? $self->{rows}[$row]->{style}
+        : undef;
 }
 
 #-------------------------------------------------------
@@ -2244,6 +2303,25 @@ sub setColAttr {
 }
 
 #-------------------------------------------------------
+# Subroutine:   getColStyle($col_num)
+# Author:       Douglas Riordan
+# Date:         1 Dec 2005
+# Description:  getter for col style
+#-------------------------------------------------------
+
+sub getColStyle {
+    my ($self, $col) = @_;
+
+    if ($self->_checkRowAndCol('getColStyle', {col => $col})) {
+        my $last_row = $self->{last_row};
+        return $self->{rows}->[$last_row]->{cells}[$col]->{style};
+    }
+    else {
+        return undef;
+    }
+}
+
+#-------------------------------------------------------
 #*******************************************************
 #
 # End of public methods
@@ -2367,12 +2445,46 @@ sub _install_stateful_set_method {
 # if possible from existing set-methods that require explicit row/column.
 #----------------------------------------------------------------------
 sub AUTOLOAD {
-    (my $called_method = $AUTOLOAD ) =~ s/.*:://;
+    (my $called_method = $AUTOLOAD) =~ s/.*:://;
     return unless $called_method =~ /^setLast(Cell|Row|Col)/;
 
-    ( my $real_method = $called_method ) =~ s/^setLast/set/;
+    (my $real_method = $called_method) =~ s/^setLast/set/;
     _install_stateful_set_method($called_method, $real_method);
     goto &$called_method;
+}
+
+
+#----------------------------------------------------------------------
+# Subroutine:   _checkRowAndCol($caller_method, $hsh_ref)
+# Author:       Douglas Riordan
+# Date:         30 Nov 2005
+# Description:  validates row and col coordinates
+#----------------------------------------------------------------------
+
+sub _checkRowAndCol {
+    my ($self, $method, $attrs) = @_;
+
+    if (defined $attrs->{row}) {
+        my $row = $attrs->{row};
+        # if -1 is used in the row parameter, use the last row
+        $row = $self->{last_row} if $row == -1;
+        if ($row > $self->{last_row} || $row < 1) {
+            print STDERR "$0: $method - Invalid table row reference\n";
+            return 0;
+        }
+    }
+
+    if (defined $attrs->{col}) {
+        my $col = $attrs->{col};
+        # if -1 is used in the col parameter, use the last col
+        $col = $self->{last_col} if $col == -1;
+        if ($col > $self->{last_col} || $col < 1) {
+            print STDERR "$0: $method - Invalid table col reference\n";
+            return 0;
+        }
+    }
+
+    return 1;
 }
 
 1;

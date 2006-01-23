@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.03';
+$VERSION = '2.04';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -2443,10 +2443,15 @@ sub _install_stateful_set_method {
 # Date: 1 July 2002
 # Description: Intercepts calls to setLast* methods, generates them 
 # if possible from existing set-methods that require explicit row/column.
+# Modified: 23 January 2006 - Suggestion by Gordon Lack
 #----------------------------------------------------------------------
+
+my %OK_auto_method = map { $_ => 1 } qw( setLastCell setLastRow setLastCol );
+
 sub AUTOLOAD {
-    (my $called_method = $AUTOLOAD) =~ s/.*:://;
-    return unless $called_method =~ /^setLast(Cell|Row|Col)/;
+    (my $called_method = $AUTOLOAD ) =~ s/.*:://;
+    return if ($called_method eq 'DESTROY');
+    die sprintf("Unsupported method $called_method call in %s\n", __PACKAGE__) unless exists $OK_auto_method{$called_method};
 
     (my $real_method = $called_method) =~ s/^setLast/set/;
     _install_stateful_set_method($called_method, $real_method);

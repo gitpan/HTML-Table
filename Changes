@@ -1,5 +1,11 @@
 Revision history for Perl extension HTML::Table.
 
+2.04
+	  23 January 2006
+	- AUTOLOAD method was making the module sliently ignore calls to invalid
+	  methods.
+	  Thanks to Gordon Lack <gml4410@ggr.co.uk> for the fix.
+
 2.03
       6 December 2005
     - Added get methods for Style attributes.

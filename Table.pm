@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.04';
+$VERSION = '2.04a';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -2422,8 +2422,6 @@ sub _is_validnum {
 sub _install_stateful_set_method {
     my ($called_method, $real_method) = @_;
 
-    die "$AUTOLOAD: No such method" if !exists($HTML::Table::{$real_method});
-    
     my $row_andor_cell = $real_method =~ /^setCell/ ?
 	'($self->getTableRows, $self->getTableCols)' :
 	$real_method =~ /^setRow/ ? '$self->getTableRows' :
@@ -2444,16 +2442,17 @@ sub _install_stateful_set_method {
 # Description: Intercepts calls to setLast* methods, generates them 
 # if possible from existing set-methods that require explicit row/column.
 # Modified: 23 January 2006 - Suggestion by Gordon Lack
+# Modified: 1 February 2006 - Made the "Usupported method" code more flexible.
 #----------------------------------------------------------------------
-
-my %OK_auto_method = map { $_ => 1 } qw( setLastCell setLastRow setLastCol );
 
 sub AUTOLOAD {
     (my $called_method = $AUTOLOAD ) =~ s/.*:://;
-    return if ($called_method eq 'DESTROY');
-    die sprintf("Unsupported method $called_method call in %s\n", __PACKAGE__) unless exists $OK_auto_method{$called_method};
-
     (my $real_method = $called_method) =~ s/^setLast/set/;
+
+    return if ($called_method eq 'DESTROY');
+
+    die sprintf("Unsupported method $called_method call in %s\n", __PACKAGE__) unless defined(&$real_method);
+
     _install_stateful_set_method($called_method, $real_method);
     goto &$called_method;
 }

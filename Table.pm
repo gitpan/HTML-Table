@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.04a';
+$VERSION = '2.05';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -141,7 +141,7 @@ Sets the table width
 
 =item setCellPadding([pixels])
 
-=item setCaption("CaptionText" [, TOP|BOTTOM])
+=item setCaption("CaptionText" [, top|bottom])
 
 =item setBGColor([colorname|colortriplet])
 
@@ -151,9 +151,9 @@ Switches on (default) or off automatic growing of the table
 if row or column values passed to setCell exceed current
 table size.
 
-=item setAlign ( [ LEFT , CENTER , RIGHT ] ) 
+=item setAlign ( [ left , center , right ] ) 
 
-=item setRules ( [ ROWS , COLS , ALL, BOTH , GROUPS  ] ) 
+=item setRules ( [ rows , cols , all, both , groups  ] ) 
 
 =item setStyle ( 'css style' ) 
 
@@ -222,11 +222,11 @@ string, even another table object via the getTable method.
 If the row and/or column numbers are outside the existing table
 boundaries extra rows and/or columns are created automatically.
 
-=item setCellAlign(row_num, col_num, [CENTER|RIGHT|LEFT])
+=item setCellAlign(row_num, col_num, [center|right|left])
 
 Sets the horizontal alignment for the cell.
 
-=item setCellVAlign(row_num, col_num, [CENTER|TOP|BOTTOM|MIDDLE|BASELINE])
+=item setCellVAlign(row_num, col_num, [center|top|bottom|middle|baseline])
 
 Sets the vertical alignment for the cell.
 
@@ -314,11 +314,11 @@ Adds a column to the right end of the table.  Assumes if
 you pass more values than there are rows that you want
 to increase the number of rows.
 
-=item setColAlign(col_num, [CENTER|RIGHT|LEFT])
+=item setColAlign(col_num, [center|right|left])
 
 Applies setCellAlign over the entire column.
 
-=item setColVAlign(col_num, [CENTER|TOP|BOTTOM|MIDDLE|BASELINE])
+=item setColVAlign(col_num, [center|top|bottom|middle|baseline])
 
 Applies setCellVAlign over the entire column.
 
@@ -380,11 +380,11 @@ Adds a row to the bottom of the table.  Assumes if you
 pass more values than there are columns that you want
 to increase the number of columns.
 
-=item setRowAlign(row_num, [CENTER|RIGHT|LEFT])
+=item setRowAlign(row_num, [center|right|left])
 
 Applies setCellAlign over the entire row.
 
-=item setRowVAlign(row_num, [CENTER|TOP|BOTTOM|MIDDLE|BASELINE])
+=item setRowVAlign(row_num, [center|top|bottom|middle|baseline])
 
 Applies setCellVAlign over the entire row.
 
@@ -513,7 +513,7 @@ to the new method.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2000-2005 Anthony Peacock, CHIME.
+Copyright (c) 2000-2007 Anthony Peacock, CHIME.
 Copyright (c) 1997 Stacy Lacy
 
 This library is free software; you can redistribute it and/or
@@ -872,11 +872,11 @@ sub setCellPadding {
 sub setCaption {
    my $self = shift;
    $self->{caption} = shift ;
-   my $align = uc(shift);
-   if (defined $align && (($align eq 'TOP') || ($align eq 'BOTTOM')) ) {
+   my $align = lc(shift);
+   if (defined $align && (($align eq 'top') || ($align eq 'bottom')) ) {
       $self->{caption_align} = $align;
    } else {
-      $self->{caption_align} = 'TOP';
+      $self->{caption_align} = 'top';
    }
 }
 
@@ -975,8 +975,8 @@ sub sort {
   if (defined $_[0] && $_[0] =~ /^-/) {
       my %flag = @_;
       $sort_col = $flag{-sort_col} || 1;
-      $sort_type = $flag{-sort_type} || "ALPHA";
-      $sort_order = $flag{-sort_order} || "ASC";
+      $sort_type = $flag{-sort_type} || "alpha";
+      $sort_order = $flag{-sort_order} || "asc";
       $skip_rows = $flag{-skip_rows} || 0;
       $strip_html = $flag{-strip_html} if defined($flag{-strip_html});
       $strip_non_numeric = $flag{-strip_non_numeric} 
@@ -985,13 +985,13 @@ sub sort {
   }
   else {
       $sort_col = shift || 1;
-      $sort_type = shift || "ALPHA";
-      $sort_order = shift || "ASC";
+      $sort_type = shift || "alpha";
+      $sort_order = shift || "asc";
       $skip_rows = shift || 0;
       $presort_func = undef;
   }
-  my $cmp_symbol = uc($sort_type) eq "ALPHA" ? "cmp" : "<=>";
-  my ($first, $last) = uc($sort_order) eq "ASC"?("\$a", "\$b"):("\$b", "\$a");
+  my $cmp_symbol = lc($sort_type) eq "alpha" ? "cmp" : "<=>";
+  my ($first, $last) = lc($sort_order) eq "asc"?("\$a", "\$b"):("\$b", "\$a");
   my $piece1 = qq/\$self->{rows}[$first]->{cells}[$sort_col]->{contents}/;
   my $piece2 = qq/\$self->{rows}[$last]->{cells}[$sort_col]->{contents}/;
   if ($strip_html) {
@@ -1002,7 +1002,7 @@ sub sort {
       $piece1 = qq/\&{\$presort_func}($piece1)/;
       $piece2 = qq/\&{\$presort_func}($piece2)/;
   } 
-  if (uc($sort_type) ne 'ALPHA' && $strip_non_numeric) {
+  if (lc($sort_type) ne 'alpha' && $strip_non_numeric) {
       $piece1 = qq/&_stripNonNumeric($piece1)/;
       $piece2 = qq/&_stripNonNumeric($piece2)/;
   }
@@ -1135,7 +1135,7 @@ sub getCellStyle {
 }
 
 #-------------------------------------------------------
-# Subroutine:  	setCellAlign(row_num, col_num, [CENTER|RIGHT|LEFT]) 
+# Subroutine:  	setCellAlign(row_num, col_num, [center|right|left]) 
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
 # Modified:     13 Feb 2001 - Anthony Peacock for case insensitive
@@ -1147,7 +1147,7 @@ sub setCellAlign {
    my $self = shift;
    (my $row = shift) || return 0;
    (my $col = shift) || return 0;
-	my $align = uc(shift);
+	my $align = lc(shift);
 
 	# If -1 is used in either the row or col parameter, use the last row or cell
 	$row = $self->{last_row} if $row == -1;
@@ -1168,8 +1168,8 @@ sub setCellAlign {
       return ($row, $col);
    }
 
-   if (! (($align eq 'CENTER') || ($align eq 'RIGHT') || 
-          ($align eq 'LEFT'))) {
+   if (! (($align eq 'center') || ($align eq 'right') || 
+          ($align eq 'left'))) {
       print STDERR "$0:setCellAlign:Invalid alignment type\n";
       return 0;
    }
@@ -1180,7 +1180,7 @@ sub setCellAlign {
 }
 
 #-------------------------------------------------------
-# Subroutine:  	setCellVAlign(row_num, col_num, [CENTER|TOP|BOTTOM|MIDDLE|BASELINE]) 
+# Subroutine:  	setCellVAlign(row_num, col_num, [center|top|bottom|middle|baseline]) 
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
 # Modified:     13 Feb 2001 - Anthony Peacock for case insensitive
@@ -1193,7 +1193,7 @@ sub setCellVAlign {
    my $self = shift;
    (my $row = shift) || return 0;
    (my $col = shift) || return 0;
-   my $valign = uc(shift);
+   my $valign = lc(shift);
    
 	# If -1 is used in either the row or col parameter, use the last row or cell
 	$row = $self->{last_row} if $row == -1;
@@ -1214,9 +1214,9 @@ sub setCellVAlign {
       return ($row, $col);
    }
 
-   if (! (($valign eq "CENTER") || ($valign eq "TOP") || 
-          ($valign eq "BOTTOM")  || ($valign eq "MIDDLE") ||
-		  ($valign eq "BASELINE")) ) {
+   if (! (($valign eq "center") || ($valign eq "top") || 
+          ($valign eq "bottom")  || ($valign eq "middle") ||
+		  ($valign eq "baseline")) ) {
       print STDERR "$0:setCellVAlign:Invalid alignment type\n";
       return 0;
    }
@@ -1692,7 +1692,7 @@ sub addRow {
 }
 
 #-------------------------------------------------------
-# Subroutine:  	setRowAlign(row_num, [CENTER|RIGHT|LEFT]) 
+# Subroutine:  	setRowAlign(row_num, [center|right|left]) 
 # Author:       Stacy Lacy
 # Date:			30 Jul 1997
 # Modified:		05 Jan 2002 - Arno Teunisse
@@ -1711,7 +1711,7 @@ sub setRowAlign {
 		print STDERR "\n$0:setRowAlign: Invalid table reference" ;
 		return 0;
 	} elsif ( $align !~ /left|right|center/i ) {
-		print STDERR "\nsetRowAlign: Alignment can be : 'LEFT | RIGHT | CENTER' : Cur value: $align\n";
+		print STDERR "\nsetRowAlign: Alignment can be : 'left | right | center' : Cur value: $align\n";
 		return 0;
 	}
 	
@@ -1767,7 +1767,7 @@ sub setRowClass {
 
 
 #-------------------------------------------------------
-# Subroutine:  	setRowVAlign(row_num, [CENTER|TOP|BOTTOM]) 
+# Subroutine:  	setRowVAlign(row_num, [center|top|bottom]) 
 # Author:       Stacy Lacy	
 # Date:			30 Jul 1997
 # Modified:		23 Oct 2003 - Anthony Peacock
@@ -2012,7 +2012,7 @@ sub addCol {
 }
 
 #-------------------------------------------------------
-# Subroutine:  	setColAlign(col_num, [CENTER|RIGHT|LEFT]) 
+# Subroutine:  	setColAlign(col_num, [center|right|left]) 
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
 #-------------------------------------------------------
@@ -2038,7 +2038,7 @@ sub setColAlign {
 }
 
 #-------------------------------------------------------
-# Subroutine:  	setColVAlign(col_num, [CENTER|TOP|BOTTOM])
+# Subroutine:  	setColVAlign(col_num, [center|top|bottom])
 # Author:       Stacy Lacy	
 # Date:		30 Jul 1997
 #-------------------------------------------------------

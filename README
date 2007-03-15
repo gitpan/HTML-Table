@@ -10,12 +10,6 @@ INSTALL
         make test
         make install
 
-IMPORTANT V2.00 BETA TEST VERSION
-	This version is a beta test of the new v2.xx strand of 
-	development, and introduces a new internal representation of
-	the table data and attributes.  Please test thoroughly before
-	installing in a production environment.
-
 DESCRIPTION
     HTML::Table is used to generate HTML tables for
     CGI scripts.  By using the methods provided fairly
@@ -49,7 +43,7 @@ AUTHOR
     contributed patches.
 
 COPYRIGHT
-    Copyright (c) 1998-2005 Anthony Peacock, CHIME.
+    Copyright (c) 1998-2007 Anthony Peacock, CHIME.
     Copyright (c) 1997 Stacy Lacy
 
     This library is free software; you can redistribute it and/or

@@ -1,8 +1,13 @@
 Revision history for Perl extension HTML::Table.
 
+2.06
+	  4 June 2007
+	- Added patch for even/odd row class support, supplied by Chris Weyl
+	  Thanks to Chris Weyl <cweyl@alumni.drew.edu> for this patch.
+
 2.05
 	  15 March 2007
-	- Fixed code so that all HTML tags and are in lower case.
+	- Fixed code so that all HTML tags and attributes are in lower case.
 
 2.04
 	  23 January 2006

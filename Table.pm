@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.05';
+$VERSION = '2.06';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -29,6 +29,8 @@ HTML::Table - produces HTML tables
                             -padding=>0,
                             -style=>'color: blue',
                             -class=>'myclass',
+                            -evenrowclass=>'even',
+                            -oddrowclass=>'odd',
                             -head=> ['head1', 'head2'],
                             -data=> [ ['1:1', '1:2'], ['2:1', '2:2'] ] );
    or
@@ -109,6 +111,8 @@ considered an empty table.
 		 -align=>table_alignment,
 		 -style=>table_style,
  		 -class=>table_class,
+ 		 -evenrowclass=>'even',
+         -oddrowclass=>'odd',
 		 -bgcolor=>back_colour, 
 		 -width=>table_width, 
 		 -spacing=>cell_spacing, 
@@ -118,6 +122,11 @@ Creates a new HTML table object.  If rows and columns
 are specified, the table will be initialized to that
 size.  Row and Column numbers start at 1,1.  0,0 is
 considered an empty table.
+
+If evenrowclass or oddrowclass is specified, these 
+classes will be applied to even and odd rows,
+respectively, unless those rows have a specific class 
+applied to it.
 
 =back
 
@@ -162,6 +171,14 @@ Sets the table style attribute.
 =item setClass ( 'css class' ) 
 
 Sets the table class attribute.
+
+=item setEvenRowClass ( 'css class' )
+
+Sets the class attribute of even rows in the table.
+
+=item setOddRowClass ( 'css class' )
+
+Sets the class attribute of odd rows in the table.
 
 =item setAttr ( 'user attribute' ) 
 
@@ -511,6 +528,9 @@ Tommi Maekitalo, t.maekitalo@epgmbh.de
 For adding the 'head' parameter to the new method and for adding the initialisation from an array ref 
 to the new method.
 
+Chris Weyl, cweyl@alumni.drew.edu
+For adding the even/odd row class support.
+
 =head1 COPYRIGHT
 
 Copyright (c) 2000-2007 Anthony Peacock, CHIME.
@@ -540,6 +560,7 @@ perl(1), CGI(3)
 # Modified:     13 Feb 2001 - Anthony Peacock
 # Modified:     30 Aug 2002 - Tommi Maekitalo
 # Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
+# Modified:     25 May 2007 - Chris Weyl (even/odd row class support) 
 #-------------------------------------------------------
 sub new {
 
@@ -563,6 +584,8 @@ if (defined $_[0] && $_[0] =~ /^-/) {
     $self->{cellspacing} = defined $flags{-spacing} && _is_validnum($flags{-spacing}) ? $flags{-spacing} : undef;
     $self->{cellpadding} = defined $flags{-padding} && _is_validnum($flags{-padding}) ? $flags{-padding} : undef;
     $self->{last_col} = $flags{-cols} || 0;
+    $self->{evenrowclass} = $flags{-evenrowclass} || undef;
+    $self->{oddrowclass} = $flags{-oddrowclass} || undef;
 
     if ($flags{-head})
     {
@@ -618,6 +641,7 @@ return $self;
 # Modified:		05 Jan 2002 - Arno Teunisse
 # Modified:		10 Jan 2002 - Anthony Peacock
 # Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
+# Modified:     25 May 2007 - Chris Weyl (add even/odd row class support)
 #-------------------------------------------------------
 sub getTable {
    my $self = shift;
@@ -659,6 +683,10 @@ sub getTable {
 		$html .= ' valign="' . $self->{rows}[$i]->{valign} . '"'  if defined $self->{rows}[$i]->{valign} ;
 		$html .= ' style="' . $self->{rows}[$i]->{style} . '"'  if defined $self->{rows}[$i]->{style} ;
 		$html .= ' class="' . $self->{rows}[$i]->{class} . '"'  if defined $self->{rows}[$i]->{class} ;
+		$html .= defined $self->{rows}[$i]->{class}             ? ' class="' . $self->{rows}[$i]->{class} . '"'  
+               : defined $self->{evenrowclass} && ($i % 2 == 0) ? ' class="' .  $self->{evenrowclass} . '"'
+               : defined $self->{oddrowclass}  && ($i % 2 == 1) ? ' class="' .  $self->{oddrowclass} . '"'
+               :                                                  q{};
 		$html .= ' nowrap="' . $self->{rows}[$i]->{nowrap} . '"'  if defined $self->{rows}[$i]->{nowrap} ;
 		$html .= " $self->{rows}[$i]->{attr}" if defined $self->{rows}[$i]->{attr} ;
 		$html .= ">" ; 	# Closing tr tag
@@ -817,6 +845,26 @@ sub setStyle {
 sub setClass {
    my $self = shift;
    $self->{class} = shift || undef;
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setEvenRowClass(css class) 
+# Author:       Chris Weyl
+# Date:			25 May 2007
+#-------------------------------------------------------
+sub setEvenRowClass {
+   my $self = shift;
+   $self->{evenrowclass} = shift || undef;
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setOddRowClass(css class) 
+# Author:       Chris Weyl
+# Date:			25 May 2007
+#-------------------------------------------------------
+sub setOddRowClass {
+   my $self = shift;
+   $self->{oddrowclass} = shift || undef;
 }
 
 #-------------------------------------------------------

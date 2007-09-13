@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                HTML-Table
-version:             2.06
+version:             2.07-beta
 abstract:            ~
 license:             ~
 generated_by:        ExtUtils::MakeMaker version 6.32

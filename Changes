@@ -1,5 +1,18 @@
 Revision history for Perl extension HTML::Table.
 
+2.07-beta
+	  13 September 2007
+	- Added THEAD, TFOOT and TBODY sections.
+	  Request from Miguel Santinho <msantinho@simplicidade.com>.
+	  
+	  There are now methods that take a section and section number as parameters.
+	  ie. setSectionCell ( 'tbody', 0, 2, 3, 'Cell 2,3'); 
+	  
+	  Existing methods default to working on the first tbody section, for backwards 
+	  compatibility.
+	  
+	  You can have only one each of tfoot and thead sections, but multiple tbody sections.
+
 2.06
 	  4 June 2007
 	- Added patch for even/odd row class support, supplied by Chris Weyl

@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.07-beta';
+$VERSION = '2.07-b1';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -936,6 +936,28 @@ sub getTable {
 		}	
 		$html .= "</thead>\n";
 	}
+	
+	# TFOOT tag (if defined)
+	if (defined $self->{tfoot}) {
+		$html .= "<tfoot";
+		
+		# Set the section attributes (if any)
+		$html .= ' id="' . $self->{tfoot}[0]->{id} . '"' if defined $self->{tfoot}[0]->{id};
+		$html .= ' title="' . $self->{tfoot}[0]->{title} . '"' if defined $self->{tfoot}[0]->{title};
+		$html .= ' class="' . $self->{tfoot}[0]->{class} . '"' if defined $self->{tfoot}[0]->{class};
+		$html .= ' style="' . $self->{tfoot}[0]->{style} . '"' if defined $self->{tfoot}[0]->{style};
+		$html .= ' align="' . $self->{tfoot}[0]->{align} . '"' if defined $self->{tfoot}[0]->{align};
+		$html .= ' valign="' . $self->{tfoot}[0]->{valign} . '"' if defined $self->{tfoot}[0]->{valign};
+		$html .= ' attr="' . $self->{tfoot}[0]->{attr} . '"' if defined $self->{tfoot}[0]->{attr};
+		
+		$html .= ">\n";
+		
+		for my $i ( 1..($self->{tfoot}[0]->{last_row}) ){
+			# Print each row   
+			$html .= $self->getRow('tfoot', 0, $i);
+		}	
+		$html .= "</tfoot>\n";
+	}
       
 	# Body sections
 	my $num_sections = @{$self->{tbody}} - 1;
@@ -962,28 +984,6 @@ sub getTable {
    
    		# Close TBODY tag
    		$html .= "</tbody>\n";
-	}	
-	
-	# TFOOT tag (if defined)
-	if (defined $self->{tfoot}) {
-		$html .= "<tfoot";
-		
-		# Set the section attributes (if any)
-		$html .= ' id="' . $self->{tfoot}[0]->{id} . '"' if defined $self->{tfoot}[0]->{id};
-		$html .= ' title="' . $self->{tfoot}[0]->{title} . '"' if defined $self->{tfoot}[0]->{title};
-		$html .= ' class="' . $self->{tfoot}[0]->{class} . '"' if defined $self->{tfoot}[0]->{class};
-		$html .= ' style="' . $self->{tfoot}[0]->{style} . '"' if defined $self->{tfoot}[0]->{style};
-		$html .= ' align="' . $self->{tfoot}[0]->{align} . '"' if defined $self->{tfoot}[0]->{align};
-		$html .= ' valign="' . $self->{tfoot}[0]->{valign} . '"' if defined $self->{tfoot}[0]->{valign};
-		$html .= ' attr="' . $self->{tfoot}[0]->{attr} . '"' if defined $self->{tfoot}[0]->{attr};
-		
-		$html .= ">\n";
-		
-		for my $i ( 1..($self->{tfoot}[0]->{last_row}) ){
-			# Print each row   
-			$html .= $self->getRow('tfoot', 0, $i);
-		}	
-		$html .= "</tfoot>\n";
 	}
    
    	# Close TABLE tag

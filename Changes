@@ -1,5 +1,9 @@
 Revision history for Perl extension HTML::Table.
 
+2.07-b1
+	  17 September 2007
+	- Changed order of output for table sections, to comply with the HTML 4.01 standard.
+	  
 2.07-beta
 	  13 September 2007
 	- Added THEAD, TFOOT and TBODY sections.

@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.07-b1';
+$VERSION = '2.07-b2';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -892,7 +892,7 @@ sub getTable {
 
 	# this sub returns HTML version of the table object
 	if ((! $self->{tbody}[0]{last_row}) || (! $self->{last_col})) {
-		return "<p>No table body rows</p>\n";  # no rows or no cols
+		return ;  # no rows or no cols
 	}
 
 	# Table tag

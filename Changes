@@ -1,5 +1,10 @@
 Revision history for Perl extension HTML::Table.
 
+2.07-b2
+	  09 October 2007
+	- Removed text output when empty table is printed.
+	  Request from Erik Tank <erik@atjeu.com>
+	
 2.07-b1
 	  17 September 2007
 	- Changed order of output for table sections, to comply with the HTML 4.01 standard.

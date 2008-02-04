@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.07-b2';
+$VERSION = '2.07a';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -2117,13 +2117,8 @@ sub setSectionCellHeight {
       return ($row, $col);
    }
 
-   if (! ($value > 0)) {
-      print STDERR "$0:setSectionCellHeight:Invalid value $value\n";
-      return 0;
-   } else {
-      $self->{$section}[$section_num]->{rows}[$row]->{cells}[$col]->{height} = $value;
-      return ($row, $col);
-   }
+   $self->{$section}[$section_num]->{rows}[$row]->{cells}[$col]->{height} = $value;
+   return ($row, $col);
 }
 
 #-------------------------------------------------------
@@ -2139,32 +2134,8 @@ sub setCellHeight {
    (my $col = shift) || return 0;
    (my $value = shift);
 
-	# If -1 is used in either the row or col parameter, use the last row or cell
-	$row = $self->{last_row} if $row == -1;
-	$col = $self->{last_col} if $col == -1;
-
-   if (($row > $self->{last_row}) || ($row < 1) ) {
-      print STDERR "$0:setCellHeight:Invalid table reference\n";
-      return 0;
-   }
-   if (($col > $self->{last_col}) || ($col < 1) ) {
-      print STDERR "$0:setCellHeight:Invalid table reference\n";
-      return 0;
-   }
-
-   if (! $value) {
-      #return to default alignment if none specified
-      undef $self->{"table:cellheight"}{"$row:$col"};
-      return ($row, $col);
-   }
-
-   if (! ($value > 0)) {
-      print STDERR "$0:setCellHeight:Invalid value $value\n";
-      return 0;
-   } else {
-      $self->setSectionCellHeight ( 'tbody', 0, $row, $col, $value );
-      return ($row, $col);
-   }
+   $self->setSectionCellHeight ( 'tbody', 0, $row, $col, $value );
+   return ($row, $col);
 }
 
 #-------------------------------------------------------

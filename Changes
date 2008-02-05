@@ -1,5 +1,10 @@
 Revision history for Perl extension HTML::Table.
 
+2.07b
+	  05 February 2008
+	- Fixed error in setSectionRowWidth.
+	  Request from Ravi Kondamuru <ravikondamuru at gmail.com>
+
 2.07a
 	  04 February 2008
 	- Changed status from beta to full.

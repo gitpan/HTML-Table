@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.07a';
+$VERSION = '2.07b';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -3079,7 +3079,7 @@ sub setSectionRowHeight {
 
    # this sub should change the cell height of a row;
    my $i;
-   for ($i=1;$i <= $self->{$section}[$section_num]->{last_col};$i++) {
+   for ($i=1;$i <= $self->{last_col};$i++) {
       $self->setSectionCellHeight($section, $section_num, $row, $i, $value);
    }
 }

@@ -1,5 +1,15 @@
 Revision history for Perl extension HTML::Table.
 
+2.08  10 April 2008
+	- Added delRow and delSectionRow methods.
+	  Request from Kyle Davenport <kyle.davenport at fmr.com>
+	- Fixed error in getTable, which output the wrong section attributes.
+	  Request and fix from Colin Fine <colin.fine at pace.co.uk>
+	- Added getSection method to modularize the creation of Section HTML.
+	- Created new set of methods which apply Cell attributes across a row.  This is to make
+	  a clear distinction from those methods that set row attributes (tr).
+	  Suggest by Colin Fine <colin.fine at pace.co.uk>
+
 2.07b
 	  05 February 2008
 	- Fixed error in setSectionRowWidth.

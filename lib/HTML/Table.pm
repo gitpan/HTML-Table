@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.07b';
+$VERSION = '2.08';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -589,9 +589,18 @@ to increase the number of columns.
 
 Same as addRow, but able to specify which section to act on.
 
+=item delRow(row_num)
+
+Deletes a row from the first body section of the table.  If -1 is passed as row_num, the 
+last row in the section will be deleted.
+
+=item delSectionRow([tbody|thead|tfoot], section_num, row_num)
+
+Same as delRow, but able to specify which section to act on.
+
 =item setRowAlign(row_num, [center|right|left])
 
-Applies setCellAlign over the entire row.
+Sets the Align attribute of the row.
 
 =item setSectionRowAlign([tbody|thead|tfoot], section_num, row_num, [center|right|left])
 
@@ -599,39 +608,15 @@ Same as setRowAlign, but able to specify which section to act on.
 
 =item setRowVAlign(row_num, [center|top|bottom|middle|baseline])
 
-Applies setCellVAlign over the entire row.
+Sets the VAlign attribute of the row.
 
 =item setSectionRowVAlign([tbody|thead|tfoot], section_num, row_num, [center|top|bottom|middle|baseline])
 
 Same as setRowVAlign, but able to specify which section to act on.
 
-=item setRowWidth(row_num, [pixels|percentoftable])
-
-Applies setCellWidth over the entire row.
-
-=item setSectionRowWidth([tbody|thead|tfoot], section_num, row_num, [pixels|percentoftable])
-
-Same as setRowWidth, but able to specify which section to act on.
-
-=item setRowHeight(row_num, [pixels])
-
-Applies setCellHeight over the entire row.
-
-=item setSectionRowHeight([tbody|thead|tfoot], section_num, row_num, [pixels])
-
-Same as setRowHeight, but able to specify which section to act on.
-
-=item setRowHead(row_num, [0|1])
-
-Applies setCellHead over the entire row.
-
-=item setSectionRowHead([tbody|thead|tfoot], section_num, row_num, [0|1])
-
-Same as setRowHead, but able to specify which section to act on.
-
 =item setRowNoWrap(col_num, [0|1])
 
-Applies setCellNoWrap over the entire row.
+Sets the NoWrap attribute of the row.
 
 =item setSectionRowNoWrap([tbody|thead|tfoot], section_num, row_num, [0|1])
 
@@ -639,23 +624,15 @@ Same as setRowNoWrap, but able to specify which section to act on.
 
 =item setRowBGColor(row_num, [colorname|colortriplet])
 
-Applies setCellBGColor over the entire row.
+Sets the BGColor attribute of the row.
 
 =item setSectionRowBGColor([tbody|thead|tfoot], section_num, row_num, [colorname|colortriplet])
 
 Same as setRowBGColor, but able to specify which section to act on.
 
-=item setRowFormat(row_num, start_string, end_string)
-
-Applies setCellFormat over the entire row.
-
-=item setSectionRowFormat([tbody|thead|tfoot], section_num, row_num, start_string, end_string)
-
-Same as setRowFormat, but able to specify which section to act on.
-
 =item setRowStyle (row_num, 'css style') 
 
-Applies setCellStyle over the entire row.
+Sets the Style attribute of the row.
 
 =item setSectionRowStyle([tbody|thead|tfoot], section_num, row_num, 'css style')
 
@@ -663,7 +640,7 @@ Same as setRowStyle, but able to specify which section to act on.
 
 =item setRowClass (row_num, 'css class') 
 
-Applies setCellClass over the entire row.
+Sets the Class attribute of the row.
 
 =item setSectionRowClass([tbody|thead|tfoot], section_num, row_num, 'css class')
 
@@ -671,11 +648,62 @@ Same as setRowClass, but able to specify which section to act on.
 
 =item setRowAttr (row_num, 'user attribute') 
 
-Applies setCellAttr over the entire row.
+Sets the Attr attribute of the row.
 
 =item setSectionRowAttr([tbody|thead|tfoot], section_num, row_num, 'user attribute')
 
 Same as setRowAttr, but able to specify which section to act on.
+
+
+
+=item setRCellsWidth(row_num, [pixels|percentoftable])
+
+=item setRowWidth(row_num, [pixels|percentoftable])  ** Deprecated **
+
+Applies setCellWidth over the entire row.
+
+=item setSectionRCellsWidth([tbody|thead|tfoot], section_num, row_num, [pixels|percentoftable])
+
+=item setSectionRowWidth([tbody|thead|tfoot], section_num, row_num, [pixels|percentoftable])   ** Deprecated **
+
+Same as setRowWidth, but able to specify which section to act on.
+
+=item setRCellsHeight(row_num, [pixels])
+
+=item setRowHeight(row_num, [pixels])   ** Deprecated **
+
+Applies setCellHeight over the entire row.
+
+=item setSectionRCellsHeight([tbody|thead|tfoot], section_num, row_num, [pixels])
+
+=item setSectionRowHeight([tbody|thead|tfoot], section_num, row_num, [pixels])  ** Deprecated **
+
+Same as setRowHeight, but able to specify which section to act on.
+
+=item setRCellsHead(row_num, [0|1])
+
+=item setRowHead(row_num, [0|1])  ** Deprecated **
+
+Applies setCellHead over the entire row.
+
+=item setSectionRCellsHead([tbody|thead|tfoot], section_num, row_num, [0|1])
+
+=item setSectionRowHead([tbody|thead|tfoot], section_num, row_num, [0|1])  ** Deprecated **
+
+Same as setRowHead, but able to specify which section to act on.
+
+=item setRCellsFormat(row_num, start_string, end_string)
+
+=item setRowFormat(row_num, start_string, end_string)  ** Deprecated **
+
+Applies setCellFormat over the entire row.
+
+=item setSectionRCellsFormat([tbody|thead|tfoot], section_num, row_num, start_string, end_string)
+
+=item setSectionRowFormat([tbody|thead|tfoot], section_num, row_num, start_string, end_string)  ** Deprecated **
+
+Same as setRowFormat, but able to specify which section to act on.
+
 
 =item setLastRow*
 
@@ -917,73 +945,18 @@ sub getTable {
 
 	# thead tag (if defined)
 	if (defined $self->{thead}) {
-		$html .= "<thead";
-		
-		# Set the section attributes (if any)
-		$html .= ' id="' . $self->{thead}[0]->{id} . '"' if defined $self->{thead}[0]->{id};
-		$html .= ' title="' . $self->{thead}[0]->{title} . '"' if defined $self->{thead}[0]->{title};
-		$html .= ' class="' . $self->{thead}[0]->{class} . '"' if defined $self->{thead}[0]->{class};
-		$html .= ' style="' . $self->{thead}[0]->{style} . '"' if defined $self->{thead}[0]->{style};
-		$html .= ' align="' . $self->{thead}[0]->{align} . '"' if defined $self->{thead}[0]->{align};
-		$html .= ' valign="' . $self->{thead}[0]->{valign} . '"' if defined $self->{thead}[0]->{valign};
-		$html .= ' attr="' . $self->{thead}[0]->{attr} . '"' if defined $self->{thead}[0]->{attr};
-		
-		$html .= ">\n";
-		
-		for my $i ( 1..($self->{thead}[0]->{last_row})){
-			# Print each row   
-			$html .= $self->getRow('thead', 0, $i);
-		}	
-		$html .= "</thead>\n";
+		$html .= $self->getSection ( 'thead', 0 );
 	}
 	
 	# TFOOT tag (if defined)
 	if (defined $self->{tfoot}) {
-		$html .= "<tfoot";
-		
-		# Set the section attributes (if any)
-		$html .= ' id="' . $self->{tfoot}[0]->{id} . '"' if defined $self->{tfoot}[0]->{id};
-		$html .= ' title="' . $self->{tfoot}[0]->{title} . '"' if defined $self->{tfoot}[0]->{title};
-		$html .= ' class="' . $self->{tfoot}[0]->{class} . '"' if defined $self->{tfoot}[0]->{class};
-		$html .= ' style="' . $self->{tfoot}[0]->{style} . '"' if defined $self->{tfoot}[0]->{style};
-		$html .= ' align="' . $self->{tfoot}[0]->{align} . '"' if defined $self->{tfoot}[0]->{align};
-		$html .= ' valign="' . $self->{tfoot}[0]->{valign} . '"' if defined $self->{tfoot}[0]->{valign};
-		$html .= ' attr="' . $self->{tfoot}[0]->{attr} . '"' if defined $self->{tfoot}[0]->{attr};
-		
-		$html .= ">\n";
-		
-		for my $i ( 1..($self->{tfoot}[0]->{last_row}) ){
-			# Print each row   
-			$html .= $self->getRow('tfoot', 0, $i);
-		}	
-		$html .= "</tfoot>\n";
+		$html .= $self->getSection ( 'tfoot', 0 );
 	}
       
 	# Body sections
 	my $num_sections = @{$self->{tbody}} - 1;
 	for my $j ( 0..$num_sections ) {
-		# TBODY tag
-		$html .= "<tbody";
-		
-		# Set the section attributes (if any)
-		$html .= ' id="' . $self->{tbody}[0]->{id} . '"' if defined $self->{tbody}[0]->{id};
-		$html .= ' title="' . $self->{tbody}[0]->{title} . '"' if defined $self->{tbody}[0]->{title};
-		$html .= ' class="' . $self->{tbody}[0]->{class} . '"' if defined $self->{tbody}[0]->{class};
-		$html .= ' style="' . $self->{tbody}[0]->{style} . '"' if defined $self->{tbody}[0]->{style};
-		$html .= ' align="' . $self->{tbody}[0]->{align} . '"' if defined $self->{tbody}[0]->{align};
-		$html .= ' valign="' . $self->{tbody}[0]->{valign} . '"' if defined $self->{tbody}[0]->{valign};
-		$html .= ' attr="' . $self->{tbody}[0]->{attr} . '"' if defined $self->{tbody}[0]->{attr};
-		
-		$html .= ">\n";
-		
-		# Add body rows
-		for my $i ( 1..($self->{tbody}[$j]->{last_row}) ){
-			# Print each row of the table   
-			$html .= $self->getRow('tbody', $j, $i);
-		}
-   
-   		# Close TBODY tag
-   		$html .= "</tbody>\n";
+		$html .= $self->getSection ( 'tbody', $j );
 	}
    
    	# Close TABLE tag
@@ -1098,6 +1071,42 @@ sub getRow {
    	return ($html);
 }
 
+#-------------------------------------------------------
+# Subroutine:  	getSection
+# Author:       Anthony Peacock
+# Date:			10 April 2008
+# Description:  Gets the HTML to form a section
+#-------------------------------------------------------
+sub getSection {
+	my $self = shift;
+	my $section = lc(shift);
+	my $sect_num = shift;
+	my $html="";
+
+	# Create section HTML	
+	$html .= "<$section";
+		
+	# Set the section attributes (if any)
+	$html .= ' id="' . $self->{$section}[$sect_num]->{id} . '"' if defined $self->{$section}[$sect_num]->{id};
+	$html .= ' title="' . $self->{$section}[$sect_num]->{title} . '"' if defined $self->{$section}[$sect_num]->{title};
+	$html .= ' class="' . $self->{$section}[$sect_num]->{class} . '"' if defined $self->{$section}[$sect_num]->{class};
+	$html .= ' style="' . $self->{$section}[$sect_num]->{style} . '"' if defined $self->{$section}[$sect_num]->{style};
+	$html .= ' align="' . $self->{$section}[$sect_num]->{align} . '"' if defined $self->{$section}[$sect_num]->{align};
+	$html .= ' valign="' . $self->{$section}[$sect_num]->{valign} . '"' if defined $self->{$section}[$sect_num]->{valign};
+	$html .= ' attr="' . $self->{$section}[$sect_num]->{attr} . '"' if defined $self->{$section}[$sect_num]->{attr};
+	
+	$html .= ">\n";
+	
+	for my $i ( 1..($self->{$section}[$sect_num]->{last_row})){
+		# Print each row   
+		$html .= $self->getRow($section, $sect_num, $i);
+	}	
+	$html .= "</$section>\n";
+	
+
+   	return ($html);
+}
+	
 #-------------------------------------------------------
 # Subroutine:  	print
 # Author:       Stacy Lacy	
@@ -2699,6 +2708,55 @@ sub addRow {
 }
 
 #-------------------------------------------------------
+# Subroutine:  	delSectionRow("Section", section_num, row_num) 
+# Author:       Anthony Peacock
+# Date:			10 April 2008
+# Modified:     
+#-------------------------------------------------------
+sub delSectionRow {
+   my $self = shift;
+   my $section = lc(shift);
+   my $section_num = shift;
+   my $row_num = shift;
+   
+   if ( $section !~ /thead|tbody|tfoot/i ) {
+		print STDERR "\ndelSectionRow: Section can be : 'thead | tbody | tfoot' : Cur value: $section\n";
+		return 0;
+	} elsif ( $section =~ /thead|tfoot/i && $section_num > 0 ) {
+		print STDERR "\ndelSectionRow: Section number for Head and Foot can only be 0 : Cur value: $section_num\n";
+		return 0;
+	}
+	
+	# If -1 is used in the row parameter, use the last row
+	$row_num = $self->{$section}[$section_num]->{last_row} if $row_num == -1;
+	
+	# Deleting the last row
+	#if ( $row_num == $self->{$section}[$section_num]->{last_row} ) {
+	#	$self->{$section}[$section_num]->{rows}[$row_num] = undef;
+	#}
+	
+	splice ( @{$self->{$section}[$section_num]->{rows}}, $row_num, 1 );
+	
+	$self->{$section}[$section_num]->{last_row}--;  # decrement number of rows
+	return $self->{$section}[$section_num]{last_row};
+   
+}
+
+#-------------------------------------------------------
+# Subroutine:  	delRow(row_num) 
+# Author:       Anthony Peacock	
+# Date:			10 April 2008
+# Modified:     
+#-------------------------------------------------------
+sub delRow {
+   my $self = shift;
+   my $row_num = shift;
+
+   my $last_row = $self->delSectionRow ( 'tbody', 0, $row_num );
+   return $last_row;
+}
+
+#-------------------------------------------------------
 # Subroutine:  	setSectionRowAlign('section', section_num, row_num, [center|right|left]) 
 # Author:       Anthony Peacock
 # Date:			11 Sept 2007
@@ -2899,57 +2957,6 @@ sub setRowVAlign {
 }
 
 #-------------------------------------------------------
-# Subroutine:  	setSectionRowHead('section', section_num, row_num, [0|1]) 
-# Author:       Anthony Peacock
-# Date:			11 Sept 2007
-# Based on:     setRowHead
-#-------------------------------------------------------
-sub setSectionRowHead {
-   my $self = shift;
-   my $section = shift;
-   my $section_num = shift;
-   (my $row = shift) || return 0;
-   my $value = shift || 1;
-   
-   if ( $section !~ /thead|tbody|tfoot/i ) {
-		print STDERR "\nasetSectionRowHead: Section can be : 'thead | tbody | tfoot' : Cur value: $section\n";
-		return 0;
-	} elsif ( $section =~ /thead|tfoot/i && $section_num > 0 ) {
-		print STDERR "\nsetSectionRowHead: Section number for Head and Foot can only be 0 : Cur value: $section_num\n";
-		return 0;
-	}
-
-	# If -1 is used in the row parameter, use the last row
-	$row = $self->{$section}[$section_num]->{last_row} if $row == -1;
-
-	if ( $row > $self->{$section}[$section_num]->{last_row} || $row < 1 ) {
-		print STDERR "\n$0:setSectionRowHead: Invalid table reference" ;
-		return 0;
-	}
-
-   # this sub should change the head flag of a row;
-   my $i;
-   for ($i=1;$i <= $self->{last_col};$i++) {
-      $self->setSectionCellHead($section, $section_num, $row, $i, $value);
-   }
-}
-
-#-------------------------------------------------------
-# Subroutine:  	setRowHead(row_num, [0|1]) 
-# Author:       Stacy Lacy	
-# Date:			30 Jul 1997
-# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
-# Modified:		11 Sept 2007 - Anthony Peacock
-#-------------------------------------------------------
-sub setRowHead {
-   	my $self = shift;
-   	(my $row = shift) || return 0;
-   	my $value = shift || 1;
-
-	$self->setSectionRowHead ( 'tbody', 0, $row, $value);
-}
-
-#-------------------------------------------------------
 # Subroutine:  	setSectionRowNoWrap('section', section_num, row_num, [0|1]) 
 # Author:       Anthony Peacock
 # Date:			11 September 2007
@@ -2995,107 +3002,6 @@ sub setRowNoWrap {
    	my $value = shift;
 	
    	$self->setSectionRowNoWrap ( 'tbody', 0, $row, $value ) ;
-}
-
-#-------------------------------------------------------
-# Subroutine:  	setSectionRowWidth('Section', section_num', row_num, [pixels|percentoftable]) 
-# Author:       Anthony Peacock
-# Date:			10 Sept 2007
-# Based on:     setRowWidth
-#-------------------------------------------------------
-sub setSectionRowWidth {
-   my $self = shift;
-   my $section = lc(shift);
-   my $section_num = shift;
-   (my $row = shift) || return 0;
-   my $value = shift;
-   
-   if ( $section !~ /thead|tbody|tfoot/i ) {
-		print STDERR "\nsetSectionRowWidth: Section can be : 'thead | tbody | tfoot' : Cur value: $section\n";
-		return 0;
-	} elsif ( $section =~ /thead|tfoot/i && $section_num > 0 ) {
-		print STDERR "\nsetSectionRowWidth: Section number for Head and Foot can only be 0 : Cur value: $section_num\n";
-		return 0;
-	}
-   
-	# If -1 is used in the row parameter, use the last row
-	$row = $self->{$section}[$section_num]->{last_row} if $row == -1;
-
-	if ( $row > $self->{$section}[$section_num]->{last_row} || $row < 1 ) {
-		print STDERR "\n$0:setSectionRowWidth: Invalid table reference" ;
-		return 0;
-	}
-
-   # this sub should change the cell width of a row;
-   my $i;
-   for ($i=1;$i <= $self->{last_col};$i++) {
-      $self->setSectionCellWidth($section, $section_num, $row, $i, $value);
-   }
-}
-
-#-------------------------------------------------------
-# Subroutine:  	setRowWidth(row_num, [pixels|percentoftable]) 
-# Author:       Anthony Peacock
-# Date:			22 Feb 2001
-# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
-# Modified:		10 September 2007 - Anthony Peacock
-#-------------------------------------------------------
-sub setRowWidth {
-   my $self = shift;
-   (my $row = shift) || return 0;
-   my $value = shift;
-   
-   $self->setSectionRowWidth( 'tbody', 0, $row, $value);
-}
-
-#-------------------------------------------------------
-# Subroutine:  	setSectionRowHeight("Section", section_num, row_num, [pixels]) 
-# Author:       Anthony Peacock
-# Date:			10 Sept 2007
-# Based on:		setRowHeight
-#-------------------------------------------------------
-sub setSectionRowHeight {
-   my $self = shift;
-   my $section = lc(shift);
-   my $section_num = shift;
-   (my $row = shift) || return 0;
-   my $value = shift;
-   
-   if ( $section !~ /thead|tbody|tfoot/i ) {
-		print STDERR "\nsetSectionRowHeight: Section can be : 'thead | tbody | tfoot' : Cur value: $section\n";
-		return 0;
-	} elsif ( $section =~ /thead|tfoot/i && $section_num > 0 ) {
-		print STDERR "\nsetSectionRowHeight: Section number for Head and Foot can only be 0 : Cur value: $section_num\n";
-		return 0;
-	}
-   
-	# If -1 is used in the row parameter, use the last row
-	$row = $self->{$section}[$section_num]->{last_row} if $row == -1;
-
-	if ( $row > $self->{$section}[$section_num]->{last_row} || $row < 1 ) {
-		print STDERR "\n$0:setSectionRowHeight: Invalid table reference" ;
-		return 0;
-	}
-
-   # this sub should change the cell height of a row;
-   my $i;
-   for ($i=1;$i <= $self->{last_col};$i++) {
-      $self->setSectionCellHeight($section, $section_num, $row, $i, $value);
-   }
-}
-
-#-------------------------------------------------------
-# Subroutine:  	setRowHeight(row_num, [pixels]) 
-# Author:       Anthony Peacock
-# Date:		22 Feb 2001
-# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
-#-------------------------------------------------------
-sub setRowHeight {
-   my $self = shift;
-   (my $row = shift) || return 0;
-   my $value = shift;
-   
-   $self->setSectionRowHeight('tbody', 0, $row, $value);
 }
 
 #-------------------------------------------------------
@@ -3148,59 +3054,6 @@ sub setRowBGColor {
 }
 
 #-------------------------------------------------------
-# Subroutine:  	setSectionRowFormat('section', section_num, row_num, start_string, end_string) 
-# Author:       Anthony Peacock
-# Date:			10 September 2007
-# Modified:
-#-------------------------------------------------------
-sub setSectionRowFormat {
-   	my $self = shift;
-	my $section = lc(shift);
-	my $section_num = shift;   
-   	(my $row = shift) || return 0;
-   	my ($start_string, $end_string) = @_;
-   	
-   	if ( $section !~ /thead|tbody|tfoot/i ) {
-		print STDERR "\nsetSectionRowFormat: Section can be : 'thead | tbody | tfoot' : Cur value: $section\n";
-		return 0;
-	} elsif ( $section =~ /thead|tfoot/i && $section_num > 0 ) {
-		print STDERR "\nsetSectionRowFormat: Section number for Head and Foot can only be 0 : Cur value: $section_num\n";
-		return 0;
-	}
-   
-	# If -1 is used in the row parameter, use the last row
-	$row = $self->{$section}[$section_num]->{last_row} if $row == -1;
-
-	# You cannot set a nonexistent row
-	if ( $row > $self->{$section}[$section_num]->{last_row} || $row < 1 ) {
-		print STDERR "\n$0:setSectionRowFormat: Invalid table reference" ;
-		return 0;
-	}
-
-   # this sub should set format strings for each
-   # cell in a row given a row number;
-   my $i;
-   for ($i=1;$i <= $self->{last_col};$i++) {
-      $self->setSectionCellFormat($section, $section_num, $row,$i, $start_string, $end_string);
-   }
-}
-
-#-------------------------------------------------------
-# Subroutine:  	setRowFormat(row_num, start_string, end_string) 
-# Author:       Anthony Peacock
-# Date:			21 Feb 2001
-# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
-# Modified:		10 September 2007 - Anthony Peacock
-#-------------------------------------------------------
-sub setRowFormat {
-   my $self = shift;
-   (my $row = shift) || return 0;
-   my ($start_string, $end_string) = @_;
-   
-   $self->setSectionRowFormat( 'tbody', 0, $row, $start_string, $end_string);
-}
-
-#-------------------------------------------------------
 # Subroutine:	setSectionRowAttr('section', section_num, row, "Attribute string")
 # Comment:		To add user defined attribute to specified row in a section
 # Author:		Anthony Peacock
@@ -3247,6 +3100,345 @@ sub setRowAttr {
 	my $html_str = shift;
 
 	$self->setSectionRowAttr ( 'tbody', 0, $row, $html_str );
+}
+
+# ----- Routines that work across a Row's Cells
+
+#-------------------------------------------------------
+# Subroutine:  	setSectionRCellsHead('section', section_num, row_num, [0|1]) 
+# Author:       Anthony Peacock
+# Date:			10 April 2008
+# Based on:     setRowHead
+#-------------------------------------------------------
+sub setSectionRCellsHead {
+   my $self = shift;
+   my $section = shift;
+   my $section_num = shift;
+   (my $row = shift) || return 0;
+   my $value = shift || 1;
+   
+   if ( $section !~ /thead|tbody|tfoot/i ) {
+		print STDERR "\nasetSectionRowHead: Section can be : 'thead | tbody | tfoot' : Cur value: $section\n";
+		return 0;
+	} elsif ( $section =~ /thead|tfoot/i && $section_num > 0 ) {
+		print STDERR "\nsetSectionRowHead: Section number for Head and Foot can only be 0 : Cur value: $section_num\n";
+		return 0;
+	}
+
+	# If -1 is used in the row parameter, use the last row
+	$row = $self->{$section}[$section_num]->{last_row} if $row == -1;
+
+	if ( $row > $self->{$section}[$section_num]->{last_row} || $row < 1 ) {
+		print STDERR "\n$0:setSectionRowHead: Invalid table reference" ;
+		return 0;
+	}
+
+   # this sub should change the head flag of a row;
+   my $i;
+   for ($i=1;$i <= $self->{last_col};$i++) {
+      $self->setSectionCellHead($section, $section_num, $row, $i, $value);
+   }
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setSectionRowHead('section', section_num, row_num, [0|1]) 
+# Author:       Anthony Peacock
+# Date:			10 April 2008
+# Based on:     setRowHead
+# Status:		Deprecated by setSectionRCellsHead
+#-------------------------------------------------------
+sub setSectionRowHead {
+   my $self = shift;
+   my $section = shift;
+   my $section_num = shift;
+   (my $row = shift) || return 0;
+   my $value = shift || 1;
+   
+   return $self->setSectionRCellsHead ( $section, $section_num, $row, $value );
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setRCellsHead(row_num, [0|1]) 
+# Author:       Anthony Peacock
+# Date:			10 April 2008
+#-------------------------------------------------------
+sub setRCellsHead {
+   	my $self = shift;
+   	(my $row = shift) || return 0;
+   	my $value = shift || 1;
+
+	$self->setSectionRCellsHead ( 'tbody', 0, $row, $value);
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setRowHead(row_num, [0|1]) 
+# Author:       Stacy Lacy	
+# Date:			30 Jul 1997
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
+# Modified:		10 April 2008 - Anthony Peacock
+# Status:		Deprecated by setRCellsHead
+#-------------------------------------------------------
+sub setRowHead {
+   	my $self = shift;
+   	(my $row = shift) || return 0;
+   	my $value = shift || 1;
+
+	$self->setSectionRCellsHead ( 'tbody', 0, $row, $value);
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setSectionRCellsWidth('Section', section_num', row_num, [pixels|percentoftable]) 
+# Author:       Anthony Peacock
+# Date:			10 April 2008
+# Based on:     setRowWidth
+#-------------------------------------------------------
+sub setSectionRCellsWidth {
+   my $self = shift;
+   my $section = lc(shift);
+   my $section_num = shift;
+   (my $row = shift) || return 0;
+   my $value = shift;
+   
+   if ( $section !~ /thead|tbody|tfoot/i ) {
+		print STDERR "\nsetSectionRCellsWidth: Section can be : 'thead | tbody | tfoot' : Cur value: $section\n";
+		return 0;
+	} elsif ( $section =~ /thead|tfoot/i && $section_num > 0 ) {
+		print STDERR "\nsetSectionRCellsWidth: Section number for Head and Foot can only be 0 : Cur value: $section_num\n";
+		return 0;
+	}
+   
+	# If -1 is used in the row parameter, use the last row
+	$row = $self->{$section}[$section_num]->{last_row} if $row == -1;
+
+	if ( $row > $self->{$section}[$section_num]->{last_row} || $row < 1 ) {
+		print STDERR "\n$0:setSectionRCellsWidth: Invalid table reference" ;
+		return 0;
+	}
+
+   # this sub should change the cell width of a row;
+   my $i;
+   for ($i=1;$i <= $self->{last_col};$i++) {
+      $self->setSectionCellWidth($section, $section_num, $row, $i, $value);
+   }
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setSectionRowWidth('Section', section_num', row_num, [pixels|percentoftable]) 
+# Author:       Anthony Peacock
+# Date:			10 Sept 2007
+# Modified:		10 April 2008
+# Based on:     setRowWidth
+# Status:		Deprecated by setSectionRCellsWidth
+#-------------------------------------------------------
+sub setSectionRowWidth {
+   my $self = shift;
+   my $section = lc(shift);
+   my $section_num = shift;
+   (my $row = shift) || return 0;
+   my $value = shift;
+
+   return $self->setSectionRCellsWidth ( $section, $section_num, $row, $value );
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setRCellsWidth(row_num, [pixels|percentoftable]) 
+# Author:       Anthony Peacock
+# Date:			22 Feb 2001
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
+# Modified:		10 April 2008 - Anthony Peacock
+#-------------------------------------------------------
+sub setRCellsWidth {
+   my $self = shift;
+   (my $row = shift) || return 0;
+   my $value = shift;
+   
+   $self->setSectionRCellsWidth( 'tbody', 0, $row, $value);
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setRowWidth(row_num, [pixels|percentoftable]) 
+# Author:       Anthony Peacock
+# Date:			22 Feb 2001
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
+# Modified:		10 April 2008 - Anthony Peacock
+# Status:		Deprecated by setRCellsWidth
+#-------------------------------------------------------
+sub setRowWidth {
+   my $self = shift;
+   (my $row = shift) || return 0;
+   my $value = shift;
+   
+   $self->setSectionRCellsWidth( 'tbody', 0, $row, $value);
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setSectionRCellsHeight("Section", section_num, row_num, [pixels]) 
+# Author:       Anthony Peacock
+# Date:			10 April 2008
+# Based on:		setRowHeight
+#-------------------------------------------------------
+sub setSectionRCellsHeight {
+   my $self = shift;
+   my $section = lc(shift);
+   my $section_num = shift;
+   (my $row = shift) || return 0;
+   my $value = shift;
+   
+   if ( $section !~ /thead|tbody|tfoot/i ) {
+		print STDERR "\nsetSectionRCellsHeight: Section can be : 'thead | tbody | tfoot' : Cur value: $section\n";
+		return 0;
+	} elsif ( $section =~ /thead|tfoot/i && $section_num > 0 ) {
+		print STDERR "\nsetSectionRCellsHeight: Section number for Head and Foot can only be 0 : Cur value: $section_num\n";
+		return 0;
+	}
+   
+	# If -1 is used in the row parameter, use the last row
+	$row = $self->{$section}[$section_num]->{last_row} if $row == -1;
+
+	if ( $row > $self->{$section}[$section_num]->{last_row} || $row < 1 ) {
+		print STDERR "\n$0:setSectionRCellsHeight: Invalid table reference" ;
+		return 0;
+	}
+
+   # this sub should change the cell height of a row;
+   my $i;
+   for ($i=1;$i <= $self->{last_col};$i++) {
+      $self->setSectionCellHeight($section, $section_num, $row, $i, $value);
+   }
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setSectionRowHeight("Section", section_num, row_num, [pixels]) 
+# Author:       Anthony Peacock
+# Date:			10 Sept 2007
+# Modified:		10 April 2008
+# Based on:		setRowHeight
+# Status:		Deprecated by setSectionRCellsHeight
+#-------------------------------------------------------
+sub setSectionRowHeight {
+   my $self = shift;
+   my $section = lc(shift);
+   my $section_num = shift;
+   (my $row = shift) || return 0;
+   my $value = shift;
+   
+   return $self->setSectionRCellsHeight ( $section, $section_num, $row, $value );
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setRCellsHeight(row_num, [pixels]) 
+# Author:       Anthony Peacock
+# Date:			10 April 2008
+# Based on:		setRowHeight
+#-------------------------------------------------------
+sub setRCellsHeight {
+   my $self = shift;
+   (my $row = shift) || return 0;
+   my $value = shift;
+   
+   $self->setSectionRCellsHeight('tbody', 0, $row, $value);
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setRowHeight(row_num, [pixels]) 
+# Author:       Anthony Peacock
+# Date:			22 Feb 2001
+# Modified:     10 April 2008
+# Status:		Deprecated by setRCellsHeight
+#-------------------------------------------------------
+sub setRowHeight {
+   my $self = shift;
+   (my $row = shift) || return 0;
+   my $value = shift;
+   
+   $self->setSectionRCellsHeight('tbody', 0, $row, $value);
+}
+
+
+#-------------------------------------------------------
+# Subroutine:  	setSectionRCellsFormat('section', section_num, row_num, start_string, end_string) 
+# Author:       Anthony Peacock
+# Date:			10 April 2008
+# Base on:		setSectionRowFormat
+#-------------------------------------------------------
+sub setSectionRCellsFormat {
+   	my $self = shift;
+	my $section = lc(shift);
+	my $section_num = shift;   
+   	(my $row = shift) || return 0;
+   	my ($start_string, $end_string) = @_;
+   	
+   	if ( $section !~ /thead|tbody|tfoot/i ) {
+		print STDERR "\nsetSectionRCellsFormat: Section can be : 'thead | tbody | tfoot' : Cur value: $section\n";
+		return 0;
+	} elsif ( $section =~ /thead|tfoot/i && $section_num > 0 ) {
+		print STDERR "\nsetSectionRCellsFormat: Section number for Head and Foot can only be 0 : Cur value: $section_num\n";
+		return 0;
+	}
+   
+	# If -1 is used in the row parameter, use the last row
+	$row = $self->{$section}[$section_num]->{last_row} if $row == -1;
+
+	# You cannot set a nonexistent row
+	if ( $row > $self->{$section}[$section_num]->{last_row} || $row < 1 ) {
+		print STDERR "\n$0:setSectionRCellsFormat: Invalid table reference" ;
+		return 0;
+	}
+
+   # this sub should set format strings for each
+   # cell in a row given a row number;
+   my $i;
+   for ($i=1;$i <= $self->{last_col};$i++) {
+      $self->setSectionCellFormat($section, $section_num, $row,$i, $start_string, $end_string);
+   }
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setSectionRowFormat('section', section_num, row_num, start_string, end_string) 
+# Author:       Anthony Peacock
+# Date:			10 September 2007
+# Modified:		10 April 2008
+# Status:		Deprecated by setSectionRCellsFormat
+#-------------------------------------------------------
+sub setSectionRowFormat {
+   	my $self = shift;
+	my $section = lc(shift);
+	my $section_num = shift;   
+   	(my $row = shift) || return 0;
+   	my ($start_string, $end_string) = @_;
+
+   	return $self->setSectionRCellsFormat ( $section, $section_num, $row, $start_string, $end_string );
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setRCellsFormat(row_num, start_string, end_string) 
+# Author:       Anthony Peacock
+# Date:			21 Feb 2001
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
+# Modified:		10 April 2008 - Anthony Peacock
+#-------------------------------------------------------
+sub setRCellsFormat {
+   my $self = shift;
+   (my $row = shift) || return 0;
+   my ($start_string, $end_string) = @_;
+   
+   $self->setSectionRCellsFormat( 'tbody', 0, $row, $start_string, $end_string);
+}
+
+#-------------------------------------------------------
+# Subroutine:  	setRowFormat(row_num, start_string, end_string) 
+# Author:       Anthony Peacock
+# Date:			21 Feb 2001
+# Modified:     23 Oct 2003 - Anthony Peacock (Version 2 new data structure)
+# Modified:		10 September 2007 - Anthony Peacock
+# Status:		Deprecated by setRCellsFormat
+#-------------------------------------------------------
+sub setRowFormat {
+   my $self = shift;
+   (my $row = shift) || return 0;
+   my ($start_string, $end_string) = @_;
+   
+   $self->setSectionRCellsFormat( 'tbody', 0, $row, $start_string, $end_string);
 }
 
 #-------------------------------------------------------

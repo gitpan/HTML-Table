@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '2.08';
+$VERSION = '2.08a';
 
 use overload	'""'	=>	\&getTable,
 				fallback => undef;
@@ -986,7 +986,6 @@ sub getRow {
 	$html .= ' align="' . $self->{$section}[$sect_num]->{rows}[$row_num]->{align} . '"'  if defined $self->{$section}[$sect_num]->{rows}[$row_num]->{align};	
 	$html .= ' valign="' . $self->{$section}[$sect_num]->{rows}[$row_num]->{valign} . '"'  if defined $self->{$section}[$sect_num]->{rows}[$row_num]->{valign} ;
 	$html .= ' style="' . $self->{$section}[$sect_num]->{rows}[$row_num]->{style} . '"'  if defined $self->{$section}[$sect_num]->{rows}[$row_num]->{style} ;
-	$html .= ' class="' . $self->{$section}[$sect_num]->{rows}[$row_num]->{class} . '"'  if defined $self->{$section}[$sect_num]->{rows}[$row_num]->{class} ;
 	$html .= defined $self->{$section}[$sect_num]->{rows}[$row_num]->{class}             ? ' class="' . $self->{$section}[$sect_num]->{rows}[$row_num]->{class} . '"'  
               : defined $self->{evenrowclass} && ($row_num % 2 == 0) ? ' class="' .  $self->{evenrowclass} . '"'
               : defined $self->{oddrowclass}  && ($row_num % 2 == 1) ? ' class="' .  $self->{oddrowclass} . '"'

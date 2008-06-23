@@ -1,5 +1,9 @@
 Revision history for Perl extension HTML::Table.
 
+2.08a 23 June 2008
+	- Fixed outputing row class attribute twice.
+	  Request and fix from Reinhard Mutz
+
 2.08  10 April 2008
 	- Added delRow and delSectionRow methods.
 	  Request from Kyle Davenport <kyle.davenport at fmr.com>
